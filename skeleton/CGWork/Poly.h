@@ -4,39 +4,52 @@
 #include <vector>
 #include "Vector3.h"
 #include "Matrix4.h"
+#include <Windows.h> // For COLORREF
 
 class Poly {
 private:
-    std::vector<Vector3> vertices;   // List of vertices
-    Vector3 normal;                  // Normal vector for the polygon
-    bool hasNormal;                  // Indicates if the polygon has a predefined normal
+    std::vector<Vector3> vertices;       // List of vertices
+    std::vector<Vector3> vertexNormals;  // Normals for each vertex
+    Vector3 normal;                      // Normal vector for the polygon
+    bool hasNormal;                      // Indicates if the polygon has a predefined normal
+    COLORREF color;                      // Color of the polygon
 
 public:
     // Constructor
     Poly();
 
-    // Add a vertex to the polygon
+    // Add a vertex and its normal (optional)
     void addVertex(const Vector3& vertex);
+    void addVertexNormal(const Vector3& normal);
 
-    // Mutable version: Get the vertices for modification
+    // Get vertices
     std::vector<Vector3>& getVertices();
-
-    // Const version: Get the vertices for read-only access
     const std::vector<Vector3>& getVertices() const;
+
+    // Get vertex normals
+    std::vector<Vector3>& getVertexNormals();
+    const std::vector<Vector3>& getVertexNormals() const;
 
     // Get the number of vertices
     size_t getVertexCount() const;
 
-    // Set and get the normal vector
+    // Polygon color management
+    void setColor(COLORREF c);
+    COLORREF getColor() const;
+
+    // Polygon normal management
     void setNormal(const Vector3& normal);
     const Vector3& getNormal() const;
     bool hasPredefinedNormal() const;
 
-    // Calculate normal from vertices (if not predefined)
+    // Calculate normal from vertices
     void calculateNormal();
 
     // Apply a transformation to the polygon
     void applyTransform(const Matrix4& transform);
+
+    // Calculate the bounding box (optional)
+    void calculateBoundingBox(Vector3& min, Vector3& max) const;
 
     // Debugging: Print polygon details
     void print() const;
