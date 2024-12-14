@@ -23,6 +23,19 @@ public:
     static Matrix4 rotateX(double angle);
     static Matrix4 rotateY(double angle);
     static Matrix4 rotateZ(double angle);
+
+    // Projection matrices
+    static Matrix4 orthographic(double left, double right, double bottom, double top, double near, double far);
+    static Matrix4 perspective(double fov, double aspect, double near, double far, double d);
+
+    // Modify perspective parameter 'd'
+    void setPerspectiveD(double d);
+
+    // Inverse of the matrix
+    Matrix4 inverse() const; // Placeholder for matrix inversion
+
+    // Print the matrix (for debugging)
+    void print() const;
 };
 
 #endif // MATRIX4_H
