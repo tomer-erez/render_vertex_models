@@ -174,51 +174,55 @@ bool CGSkelStoreData(IPObjectStruct* PObj) {
 		Poly poly; // Create a new Poly object for this polygon
 		poly.setColor(polyColor); // Set the color for the polygon
 
-		// Process vertices
-		std::vector<Vector4> vertices;
-		for (PVertex = PPolygon->PVertex->Pnext, i = 1;
-			PVertex != PPolygon->PVertex && PVertex != NULL;
-			PVertex = PVertex->Pnext, i++) {
-		}
+		// Process vertices and calculate centroid
+		Vector4 centroid(0, 0, 0);
+		int vertexCount = 0;
 
 		PVertex = PPolygon->PVertex;
 
-		do { // Iterate through vertices
+		do {
 			Vector4 vertex(PVertex->Coord[0], PVertex->Coord[1], PVertex->Coord[2]);
-			vertices.push_back(vertex);
-			poly.addVertex(vertex); // Add vertex to the polygon
+			centroid = centroid + vertex;
+			poly.addVertex(vertex);
+			vertexCount++;
 
 			if (IP_HAS_NORMAL_VRTX(PVertex)) {
 				Vector4 vertexNormal(PVertex->Normal[0], PVertex->Normal[1], PVertex->Normal[2]);
-				poly.addVertexNormal(vertexNormal); // Add vertex normal if defined
+				vertexNormal = vertexNormal.normalize();
+				poly.addVertexNormal(vertexNormal);
 				scene.updateHasVertexNormals(true);
 			}
 
 			PVertex = PVertex->Pnext;
 		} while (PVertex != PPolygon->PVertex && PVertex != NULL);
 
-		// Set the polygon normal if defined, else calculate it
+		centroid = centroid / static_cast<double>(vertexCount);
+
+		// Set the polygon normal
 		if (IP_HAS_PLANE_POLY(PPolygon)) {
-			Vector4 polyNormal(PPolygon->Plane[0], PPolygon->Plane[1], PPolygon->Plane[2]);
-			poly.setNormal(polyNormal);
+			Vector4 pn(PPolygon->Plane[0], PPolygon->Plane[1], PPolygon->Plane[2]);
+			Vector4 polyNormal = pn.normalize();
+			poly.setNormalWithVisualization(centroid, polyNormal);
 		}
-		else if (vertices.size() >= 3) {
-			// Calculate the normal from the first three vertices
-			Vector4 edge1 = vertices[1] - vertices[0];
-			Vector4 edge2 = vertices[2] - vertices[0];
+		else if (vertexCount >= 3) {
+			Vector4 edge1 = poly.getVertices()[1] - poly.getVertices()[0];
+			Vector4 edge2 = poly.getVertices()[2] - poly.getVertices()[0];
 			Vector4 calculatedNormal = edge1.cross(edge2).normalize();
-			poly.setNormal(calculatedNormal); // Set the calculated normal
+			poly.setNormalWithVisualization(centroid, calculatedNormal);
 		}
 		else {
-			//Polygon has fewer than 3 vertices; cannot calculate normal
-			//ignore
+			std::cerr << "Skipping polygon with fewer than 3 vertices." << std::endl;
+			continue;
 		}
+
 		// Add the completed polygon to the global Scene
 		scene.addPolygon(poly);
 	}
 
 	return true;
 }
+
+
 
 
 /*****************************************************************************

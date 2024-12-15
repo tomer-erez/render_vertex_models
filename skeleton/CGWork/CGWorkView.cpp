@@ -88,10 +88,14 @@ void auxSolidCone(GLdouble radius, GLdouble height) {
 
 CCGWorkView::CCGWorkView()
 {
+	m_draw_poly_normals = false;
+	m_draw_vertex_normals = false;
+
 	// Set default values
 	m_nAxis = ID_AXIS_X;
 	m_nAction = ID_ACTION_ROTATE;
 	m_nView = ID_VIEW_ORTHOGRAPHIC;	
+
 	m_bIsPerspective = false;
 
 	m_nLightShading = ID_LIGHT_SHADING_FLAT;
@@ -228,24 +232,69 @@ BOOL CCGWorkView::SetupViewingOrthoConstAspect(void)
 
 
 
-
-
 BOOL CCGWorkView::OnEraseBkgnd(CDC* pDC) 
 {
 	// Windows will clear the window with the background color every time your window 
 	// is redrawn, and then CGWork will clear the viewport with its own background color.
-
-	
 	return true;
 }
+
+
+
+void CCGWorkView::DrawPolygonEdges(CDC* pDC, const Poly& poly, double screenHeight, COLORREF color) {
+	const std::vector<Vector4>& vertices = poly.getVertices();
+
+	for (size_t i = 0; i < vertices.size(); ++i) {
+		const Vector4& start = vertices[i];
+		const Vector4& end = vertices[(i + 1) % vertices.size()]; // Wrap to first vertex
+
+		LineDrawer::DrawLine(
+			pDC->m_hDC,
+			Vector4(static_cast<double>(start.x), static_cast<double>(screenHeight - start.y), 0.0),
+			Vector4(static_cast<double>(end.x), static_cast<double>(screenHeight - end.y), 0.0),
+			color
+		);
+	}
+}
+
+void CCGWorkView::DrawPolygonNormal(CDC* pDC, const Poly& poly, double screenHeight, COLORREF color) {
+	const Vector4& normalStart = poly.getNormalStart();
+	const Vector4& normalEnd = poly.getNormalEnd();
+
+	LineDrawer::DrawLine(
+		pDC->m_hDC,
+		Vector4(static_cast<double>(normalStart.x), static_cast<double>(screenHeight - normalStart.y), 0.0),
+		Vector4(static_cast<double>(normalEnd.x), static_cast<double>(screenHeight - normalEnd.y), 0.0),
+		color
+	);
+}
+void CCGWorkView::DrawVertexNormals(CDC* pDC, const Poly& poly, double screenHeight, COLORREF color) {
+	if (!poly.hasPredefinedNormal()) return;
+
+	const std::vector<Vector4>& vertices = poly.getVertices();
+	const std::vector<Vector4>& vertexNormals = poly.getVertexNormals();
+
+	if (vertices.size() != vertexNormals.size()) return; // Ensure sizes match
+	int extendNorm = 30;
+	for (size_t i = 0; i < vertices.size(); ++i) {
+		const Vector4& vertex = vertices[i];
+		const Vector4 normalEnd = vertex + vertexNormals[i]*extendNorm; // Scale the normal if needed
+
+		LineDrawer::DrawLine(
+			pDC->m_hDC,
+			Vector4(static_cast<double>(vertex.x), static_cast<double>(screenHeight - vertex.y), 0.0),
+			Vector4(static_cast<double>(normalEnd.x), static_cast<double>(screenHeight - normalEnd.y), 0.0),
+			color
+		);
+	}
+}
+
 
 
 
 /////////////////////////////////////////////////////////////////////////////
 // CCGWorkView drawing
 /////////////////////////////////////////////////////////////////////////////
-
-
 void CCGWorkView::OnDraw(CDC* pDC) {
 	CCGWorkDoc* pDoc = GetDocument();
 	ASSERT_VALID(pDoc);
@@ -266,24 +315,29 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 		const std::vector<Vector4>& vertices = poly.getVertices();
 		COLORREF color = poly.getColor(); // Get the color for the polygon
 
-		for (size_t i = 0; i < vertices.size(); ++i) {
-			const Vector4& start = vertices[i];
-			const Vector4& end = vertices[(i + 1) % vertices.size()]; //if exceeded vertices connect with first
+		// Draw polygon edges
+		DrawPolygonEdges(pDCToUse, poly, screenHeight, color);
 
-			// Draw the line using LineDrawer
-			LineDrawer::DrawLine(
-				pDCToUse->m_hDC,
-				Vector4(static_cast<double>(start.x), static_cast<double>(screenHeight - start.y), 0.0),
-				Vector4(static_cast<double>( end.x), static_cast<double>(screenHeight - end.y), 0.0),
-				color
-			);
+		// Draw polygon normals if the flag is set
+		if (!m_draw_poly_normals) {
+			DrawPolygonNormal(pDCToUse, poly, screenHeight, RGB(255, 0, 0)); // Red color for normals
+		}
+
+		// Draw vertex normals if the flag is set
+		if (!m_draw_vertex_normals) {
+			if (!scene.hasVertexNormalsAttribute()) {
+				AfxMessageBox(_T("The Object does not have vertex normals!"));
+			}
+			else {
+				DrawVertexNormals(pDCToUse, poly, screenHeight, RGB(0, 255, 0)); // Green color for normals
+			}
 		}
 	}
-
 	if (pDCToUse != m_pDC) {
 		m_pDC->BitBlt(r.left, r.top, r.Width(), r.Height(), pDCToUse, r.left, r.top, SRCCOPY);
 	}
 }
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -371,7 +425,6 @@ void CCGWorkView::OnFileLoad() {
 		
 		// Translate to origin (center the scene)
 		t = t * translateToScreen;
-
 		// Scale the scene to fit within the target screen area
 		t = t * scaling;
 		// Translate to the screen center
