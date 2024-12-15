@@ -270,8 +270,8 @@ void CCGWorkView::OnDraw(CDC* pDC)
 	double minX = DBL_MAX, minY = DBL_MAX, maxX = DBL_MIN, maxY = DBL_MIN;
 
 	for (const Poly& poly : scene.getPolygons()) {
-		const std::vector<Vector3>& vertices = poly.getVertices();
-		for (const Vector3& vertex : vertices) {
+		const std::vector<Vector4>& vertices = poly.getVertices();
+		for (const Vector4& vertex : vertices) {
 			if (vertex.x < minX) minX = vertex.x;
 			if (vertex.y < minY) minY = vertex.y;
 			if (vertex.x > maxX) maxX = vertex.x;
@@ -295,13 +295,13 @@ void CCGWorkView::OnDraw(CDC* pDC)
 
 	// Iterate through the polygons in the scene and draw them
 	for (const Poly& poly : scene.getPolygons()) {
-		const std::vector<Vector3>& vertices = poly.getVertices();
+		const std::vector<Vector4>& vertices = poly.getVertices();
 		COLORREF color = poly.getColor(); // Get the color for the polygon
 
 		// Draw lines between consecutive vertices and wrap to the first vertex
 		for (size_t i = 0; i < vertices.size(); ++i) {
-			const Vector3& start = vertices[i];
-			const Vector3& end = vertices[(i + 1) % vertices.size()]; // Wrap around
+			const Vector4& start = vertices[i];
+			const Vector4& end = vertices[(i + 1) % vertices.size()]; // Wrap around
 
 			// Apply scaling and translation to screen space
 			int x1 = static_cast<int>(start.x * scale + offsetX);
@@ -312,8 +312,8 @@ void CCGWorkView::OnDraw(CDC* pDC)
 			// Draw the line using LineDrawer
 			LineDrawer::DrawLine(
 				pDCToUse->m_hDC,
-				Vector3(static_cast<double>(x1), static_cast<double>(y1), 0.0),
-				Vector3(static_cast<double>(x2), static_cast<double>(y2), 0.0),
+				Vector4(static_cast<double>(x1), static_cast<double>(y1), 0.0),
+				Vector4(static_cast<double>(x2), static_cast<double>(y2), 0.0),
 				color // Use the polygon's color
 			);
 		}

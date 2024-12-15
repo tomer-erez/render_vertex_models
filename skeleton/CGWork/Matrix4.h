@@ -1,8 +1,7 @@
 #pragma once
 #ifndef MATRIX4_H
 #define MATRIX4_H
-
-class Vector3; // Forward declaration for use in Matrix4
+#include "Vector4.h"
 
 class Matrix4 {
 public:
@@ -10,12 +9,14 @@ public:
 
     // Constructor
     Matrix4();
+    //constructor from vectors
+    Matrix4(Vector4& a, Vector4& b, Vector4& c, Vector4& d);
 
     // Matrix multiplication
     Matrix4 operator*(const Matrix4& other) const;
 
     // Vector transformation
-    Vector3 transform(const Vector3& v) const;
+    Vector4 transform(const Vector4& v) const;
 
     // Static methods for creating transformation matrices
     static Matrix4 translate(double dx, double dy, double dz);

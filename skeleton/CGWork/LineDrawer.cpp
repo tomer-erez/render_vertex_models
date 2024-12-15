@@ -1,6 +1,6 @@
 #include "LineDrawer.h"
 //the midpoint algorithm
-void LineDrawer::DrawLine(HDC hdc, const Vector3& start, const Vector3& end, COLORREF color) {
+void LineDrawer::DrawLine(HDC hdc, const Vector4& start, const Vector4& end, COLORREF color) {
     int x1 = static_cast<int>(start.x);
     int y1 = static_cast<int>(start.y);
     int x2 = static_cast<int>(end.x);

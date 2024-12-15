@@ -63,4 +63,3 @@ polygon fineness tolerance, the minimal value is 2, and the default is 20.
 Add a way that enables the user to change the wireframe color, the normal color, and the
 background color of the window (that will override the model’s original color).
 Use CColorDialog to pick the colors.
-

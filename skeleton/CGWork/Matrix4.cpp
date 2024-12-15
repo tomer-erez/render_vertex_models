@@ -1,5 +1,5 @@
 #include "Matrix4.h"
-#include "Vector3.h"
+#include "Vector4.h"
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -10,6 +10,31 @@ Matrix4::Matrix4() {
         for (int j = 0; j < 4; ++j)
             m[i][j] = (i == j) ? 1.0 : 0.0;
 }
+
+//construction from vectors
+Matrix4::Matrix4(Vector4& a, Vector4& b, Vector4& c, Vector4& d)
+{
+    m[0][0] = a.x;
+    m[0][1] = a.y;
+    m[0][2] = a.z;
+    m[0][3] = a.w;
+
+    m[1][0] = b.x;
+    m[1][1] = b.y;
+    m[1][2] = b.z;
+    m[1][3] = b.w;
+
+    m[2][0] = c.x;
+    m[2][1] = c.y;
+    m[2][2] = c.z;
+    m[2][3] = c.w;
+
+    m[3][0] = d.x;
+    m[3][1] = d.y;
+    m[3][2] = d.z;
+    m[3][3] = d.w;
+}
+
 
 // Matrix multiplication
 Matrix4 Matrix4::operator*(const Matrix4& other) const {
@@ -25,12 +50,14 @@ Matrix4 Matrix4::operator*(const Matrix4& other) const {
     return result;
 }
 
-// Transform a Vector3
-Vector3 Matrix4::transform(const Vector3& v) const {
-    return Vector3(
-        m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3],
-        m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3],
-        m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3]
+// Transform a Vector4
+Vector4 Matrix4::transform(const Vector4& v) const {
+    return Vector4(
+        m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3]*v.w,
+        m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3]* v.w,
+        m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3]* v.w,
+        m[3][0] * v.x + m[3][1] * v.y + m[3][2] * v.z + m[3][3] * v.w
+
     );
 }
 

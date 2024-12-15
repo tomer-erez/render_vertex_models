@@ -2,15 +2,15 @@
 #define POLY_H
 
 #include <vector>
-#include "Vector3.h"
+#include "Vector4.h"
 #include "Matrix4.h"
 #include <Windows.h> // For COLORREF
 
 class Poly {
 private:
-    std::vector<Vector3> vertices;       // List of vertices
-    std::vector<Vector3> vertexNormals;  // Normals for each vertex
-    Vector3 normal;                      // Normal vector for the polygon
+    std::vector<Vector4> vertices;       // List of vertices
+    std::vector<Vector4> vertexNormals;  // Normals for each vertex
+    Vector4 normal;                      // Normal vector for the polygon
     bool hasNormal;                      // Indicates if the polygon has a predefined normal
     COLORREF color;                      // Color of the polygon
 
@@ -19,16 +19,16 @@ public:
     Poly();
 
     // Add a vertex and its normal (optional)
-    void addVertex(const Vector3& vertex);
-    void addVertexNormal(const Vector3& normal);
+    void addVertex(const Vector4& vertex);
+    void addVertexNormal(const Vector4& normal);
 
     // Get vertices
-    std::vector<Vector3>& getVertices();
-    const std::vector<Vector3>& getVertices() const;
+    std::vector<Vector4>& getVertices();
+    const std::vector<Vector4>& getVertices() const;
 
     // Get vertex normals
-    std::vector<Vector3>& getVertexNormals();
-    const std::vector<Vector3>& getVertexNormals() const;
+    std::vector<Vector4>& getVertexNormals();
+    const std::vector<Vector4>& getVertexNormals() const;
 
     // Get the number of vertices
     size_t getVertexCount() const;
@@ -38,8 +38,8 @@ public:
     COLORREF getColor() const;
 
     // Polygon normal management
-    void setNormal(const Vector3& normal);
-    const Vector3& getNormal() const;
+    void setNormal(const Vector4& normal);
+    const Vector4& getNormal() const;
     bool hasPredefinedNormal() const;
 
     // Calculate normal from vertices
@@ -49,7 +49,7 @@ public:
     void applyTransform(const Matrix4& transform);
 
     // Calculate the bounding box (optional)
-    void calculateBoundingBox(Vector3& min, Vector3& max) const;
+    void calculateBoundingBox(Vector4& min, Vector4& max) const;
 
     // Debugging: Print polygon details
     void print() const;

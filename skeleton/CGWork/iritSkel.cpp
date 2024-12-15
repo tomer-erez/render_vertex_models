@@ -12,7 +12,7 @@
 /*data structure for the entire scene
 
 */
-#include "Vector3.h" // Include Vector3
+#include "Vector4.h" // Include Vector4
 #include "Poly.h"    // Include Poly (renamed from Polygon)
 #include "Scene.h"  // Include the Scene class definition
 Scene scene; // Global scene object to hold all polygons
@@ -176,7 +176,7 @@ bool CGSkelStoreData(IPObjectStruct* PObj) {
 
 		// Set the polygon normal if defined
 		if (IP_HAS_PLANE_POLY(PPolygon)) {
-			Vector3 polyNormal(PPolygon->Plane[0], PPolygon->Plane[1], PPolygon->Plane[2]);
+			Vector4 polyNormal(PPolygon->Plane[0], PPolygon->Plane[1], PPolygon->Plane[2]);
 			poly.setNormal(polyNormal);
 		}
 
@@ -189,11 +189,11 @@ bool CGSkelStoreData(IPObjectStruct* PObj) {
 		PVertex = PPolygon->PVertex;
 
 		do { // Iterate through vertices
-			Vector3 vertex(PVertex->Coord[0], PVertex->Coord[1], PVertex->Coord[2]);
+			Vector4 vertex(PVertex->Coord[0], PVertex->Coord[1], PVertex->Coord[2]);
 			poly.addVertex(vertex); // Add vertex to the polygon
 
 			if (IP_HAS_NORMAL_VRTX(PVertex)) {
-				Vector3 vertexNormal(PVertex->Normal[0], PVertex->Normal[1], PVertex->Normal[2]);
+				Vector4 vertexNormal(PVertex->Normal[0], PVertex->Normal[1], PVertex->Normal[2]);
 				poly.addVertexNormal(vertexNormal); // Add vertex normal if defined
 			}
 

@@ -4,12 +4,12 @@
 #include <vector>
 #include "Poly.h"
 #include "Matrix4.h"
-#include "Vector3.h"
+#include "Vector4.h"
 #include <Windows.h>
 
 struct BoundingBox {
-    Vector3 min; // Minimum coordinates
-    Vector3 max; // Maximum coordinates
+    Vector4 min; // Minimum coordinates
+    Vector4 max; // Maximum coordinates
 };
 
 class Scene {

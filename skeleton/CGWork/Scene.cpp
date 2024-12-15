@@ -5,7 +5,7 @@
 // Constructor
 Scene::Scene()
     : sceneTransform(Matrix4()),
-    boundingBox{ Vector3(DBL_MAX, DBL_MAX, DBL_MAX), Vector3(DBL_MIN, DBL_MIN, DBL_MIN) },
+    boundingBox{ Vector4(DBL_MAX, DBL_MAX, DBL_MAX,DBL_MAX), Vector4(DBL_MIN, DBL_MIN, DBL_MIN,DBL_MIN) },
     wireframeColor(RGB(255, 255, 255)),  // Default white
     normalColor(RGB(0, 255, 0)),        // Default green
     backgroundColor(RGB(0, 0, 0)),      // Default black
@@ -33,7 +33,7 @@ size_t Scene::getPolygonCount() const {
 void Scene::applyTransform(const Matrix4& transform) {
     sceneTransform = sceneTransform * transform; // Accumulate transformations
     for (Poly& poly : polygons) {
-        for (Vector3& vertex : poly.getVertices()) { // Use mutable getVertices()
+        for (Vector4& vertex : poly.getVertices()) { // Use mutable getVertices()
             vertex = transform.transform(vertex); // Transform each vertex
         }
     }
@@ -42,11 +42,11 @@ void Scene::applyTransform(const Matrix4& transform) {
 
 // Calculate the bounding box of the scene
 void Scene::calculateBoundingBox() {
-    boundingBox.min = Vector3(DBL_MAX, DBL_MAX, DBL_MAX);
-    boundingBox.max = Vector3(DBL_MIN, DBL_MIN, DBL_MIN);
+    boundingBox.min = Vector4(DBL_MAX,DBL_MAX, DBL_MAX, DBL_MAX);
+    boundingBox.max = Vector4(DBL_MIN,DBL_MIN, DBL_MIN, DBL_MIN);
 
     for (const Poly& poly : polygons) {
-        for (const Vector3& vertex : poly.getVertices()) {
+        for (const Vector4& vertex : poly.getVertices()) {
             boundingBox.min.updateMin(vertex);
             boundingBox.max.updateMax(vertex);
         }
@@ -109,5 +109,5 @@ bool Scene::isShowBoundingBox() const {
 void Scene::clear() {
     polygons.clear();
     sceneTransform = Matrix4(); // Reset to identity matrix
-    boundingBox = { Vector3(DBL_MAX, DBL_MAX, DBL_MAX), Vector3(DBL_MIN, DBL_MIN, DBL_MIN) };
+    boundingBox = { Vector4(DBL_MAX, DBL_MAX, DBL_MAX), Vector4(DBL_MIN, DBL_MIN, DBL_MIN) };
 }
