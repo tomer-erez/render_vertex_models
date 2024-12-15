@@ -12,7 +12,7 @@
 /*data structure for the entire scene
 
 */
-#include "Vector3.h" // Include Vector3
+#include "Vector4.h" // Include Vector4
 #include "Poly.h"    // Include Poly (renamed from Polygon)
 #include "Scene.h"  // Include the Scene class definition
 Scene scene; // Global scene object to hold all polygons
@@ -123,90 +123,90 @@ void CGSkelDumpOneTraversedObject(IPObjectStruct *PObj,
 * RETURN VALUE:                                                              *
 *   bool:		false - fail, true - success.                                *
 *****************************************************************************/
-bool CGSkelStoreData(IPObjectStruct *PObj)
-{
+bool CGSkelStoreData(IPObjectStruct* PObj) {
 	int i;
-	const char *Str;
+	const char* Str;
 	double RGB[3], Transp;
-	IPPolygonStruct *PPolygon;
-	IPVertexStruct *PVertex;
-	const IPAttributeStruct *Attrs =
-        AttrTraceAttributes(PObj -> Attr, PObj -> Attr);
+	IPPolygonStruct* PPolygon;
+	IPVertexStruct* PVertex;
+	const IPAttributeStruct* Attrs = AttrTraceAttributes(PObj->Attr, PObj->Attr);
 
-	if (PObj -> ObjType != IP_OBJ_POLY) {
-		AfxMessageBox(_T("Non polygonal object detected and ignored"));
+	if (PObj->ObjType != IP_OBJ_POLY) {
+		AfxMessageBox(_T("Non-polygonal object detected and ignored"));
 		return true;
 	}
 
-	/* You can use IP_IS_POLYGON_OBJ(PObj) and IP_IS_POINTLIST_OBJ(PObj) 
-	   to identify the type of the object*/
+	// Retrieve object color
+	COLORREF polyColor = RGB(255, 255, 255); // Default to white
+	if (CGSkelGetObjectColor(PObj, RGB)) {
+		polyColor = RGB(static_cast<int>(RGB[0] * 255),
+			static_cast<int>(RGB[1] * 255),
+			static_cast<int>(RGB[2] * 255));
+	}
 
-	if (CGSkelGetObjectColor(PObj, RGB))
-	{
-		/* color code */
+	if (CGSkelGetObjectTransp(PObj, &Transp)) {
+		// Handle transparency if needed
 	}
-	if (CGSkelGetObjectTransp(PObj, &Transp))
-	{
-		/* transparency code */
+
+	if ((Str = CGSkelGetObjectTexture(PObj)) != NULL) {
+		// Handle volumetric texture if needed
 	}
-	if ((Str = CGSkelGetObjectTexture(PObj)) != NULL)
-	{
-		/* volumetric texture code */
+
+	if ((Str = CGSkelGetObjectPTexture(PObj)) != NULL) {
+		// Handle parametric texture if needed
 	}
-	if ((Str = CGSkelGetObjectPTexture(PObj)) != NULL)
-	{
-		/* parametric texture code */
-	}
-	if (Attrs != NULL) 
-	{
+
+	if (Attrs != NULL) {
 		printf("[OBJECT\n");
 		while (Attrs) {
-			/* attributes code */
+			// Handle additional attributes if needed
 			Attrs = AttrTraceAttributes(Attrs, NULL);
 		}
 	}
-	for (PPolygon = PObj -> U.Pl; PPolygon != NULL;	PPolygon = PPolygon -> Pnext) {
-			if (PPolygon -> PVertex == NULL) {
-				AfxMessageBox(_T("Dump: Attemp to dump empty polygon"));
-				return false;
+
+	// Iterate over polygons
+	for (PPolygon = PObj->U.Pl; PPolygon != NULL; PPolygon = PPolygon->Pnext) {
+		if (PPolygon->PVertex == NULL) {
+			AfxMessageBox(_T("Attempt to dump empty polygon"));
+			return false;
+		}
+
+		Poly poly; // Create a new Poly object for this polygon
+		poly.setColor(polyColor); // Set the color for the polygon
+
+		// Set the polygon normal if defined
+		if (IP_HAS_PLANE_POLY(PPolygon)) {
+			Vector4 polyNormal(PPolygon->Plane[0], PPolygon->Plane[1], PPolygon->Plane[2]);
+			poly.setNormal(polyNormal);
+		}
+
+		// Process vertices
+		for (PVertex = PPolygon->PVertex->Pnext, i = 1;
+			PVertex != PPolygon->PVertex && PVertex != NULL;
+			PVertex = PVertex->Pnext, i++) {
+		}
+
+		PVertex = PPolygon->PVertex;
+
+		do { // Iterate through vertices
+			Vector4 vertex(PVertex->Coord[0], PVertex->Coord[1], PVertex->Coord[2]);
+			poly.addVertex(vertex); // Add vertex to the polygon
+
+			if (IP_HAS_NORMAL_VRTX(PVertex)) {
+				Vector4 vertexNormal(PVertex->Normal[0], PVertex->Normal[1], PVertex->Normal[2]);
+				poly.addVertexNormal(vertexNormal); // Add vertex normal if defined
 			}
 
-			/* Count number of vertices. */
-			for (PVertex = PPolygon -> PVertex -> Pnext, i = 1;
-				PVertex != PPolygon -> PVertex && PVertex != NULL;
-				PVertex = PVertex -> Pnext, i++);
-			/* use if(IP_HAS_PLANE_POLY(PPolygon)) to know whether a normal is defined for the polygon
-			   access the normal by the first 3 components of PPolygon->Plane */
-			PVertex = PPolygon -> PVertex;
+			PVertex = PVertex->Pnext;
+		} while (PVertex != PPolygon->PVertex && PVertex != NULL);
 
-			// New: Populate the Scene
-			Poly poly; // Create a new Poly object for this polygon
-
-			do {			     /* Assume at least one edge in polygon! */
-								 /* code handeling all vertex/normal/texture coords */
-				Vector3 vertex(PVertex->Coord[0], PVertex->Coord[1], PVertex->Coord[2]);
-				poly.addVertex(vertex); // Add the vertex to the Poly
-
-				if(IP_HAS_NORMAL_VRTX(PVertex)) 
-				{
-				    int x = 0;
-				    ++x;
-					/*maybe later we will do something with the noramls*/
-					//Vector3 normal(PVertex->Normal[0], PVertex->Normal[1], PVertex->Normal[2]); 
-
-				}
-
-
-				PVertex = PVertex -> Pnext;
-			}
-			while (PVertex != PPolygon -> PVertex && PVertex != NULL);
-			/* Close the polygon. */
-			// Add the completed polygon to the global Scene
-			scene.addPolygon(poly);
+		// Add the completed polygon to the global Scene
+		scene.addPolygon(poly);
 	}
-	/* Close the object. */
+
 	return true;
 }
+
 
 /*****************************************************************************
 * DESCRIPTION:                                                               *
