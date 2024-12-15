@@ -174,31 +174,46 @@ bool CGSkelStoreData(IPObjectStruct* PObj) {
 		Poly poly; // Create a new Poly object for this polygon
 		poly.setColor(polyColor); // Set the color for the polygon
 
-		// Set the polygon normal if defined
-		if (IP_HAS_PLANE_POLY(PPolygon)) {
-			Vector4 polyNormal(PPolygon->Plane[0], PPolygon->Plane[1], PPolygon->Plane[2]);
-			poly.setNormal(polyNormal);
-		}
-
-		// Process vertices
-		for (PVertex = PPolygon->PVertex->Pnext, i = 1;
-			PVertex != PPolygon->PVertex && PVertex != NULL;
-			PVertex = PVertex->Pnext, i++) {
-		}
+		// Process vertices and calculate centroid
+		Vector4 centroid(0, 0, 0);
+		int vertexCount = 0;
 
 		PVertex = PPolygon->PVertex;
 
-		do { // Iterate through vertices
+		do {
 			Vector4 vertex(PVertex->Coord[0], PVertex->Coord[1], PVertex->Coord[2]);
-			poly.addVertex(vertex); // Add vertex to the polygon
+			centroid = centroid + vertex;
+			poly.addVertex(vertex);
+			vertexCount++;
 
 			if (IP_HAS_NORMAL_VRTX(PVertex)) {
 				Vector4 vertexNormal(PVertex->Normal[0], PVertex->Normal[1], PVertex->Normal[2]);
-				poly.addVertexNormal(vertexNormal); // Add vertex normal if defined
+				vertexNormal = vertexNormal.normalize();
+				poly.addVertexNormal(vertexNormal);
+				scene.updateHasVertexNormals(true);
 			}
 
 			PVertex = PVertex->Pnext;
 		} while (PVertex != PPolygon->PVertex && PVertex != NULL);
+
+		centroid = centroid / static_cast<double>(vertexCount);
+
+		// Set the polygon normal
+		if (IP_HAS_PLANE_POLY(PPolygon)) {
+			Vector4 pn(PPolygon->Plane[0], PPolygon->Plane[1], PPolygon->Plane[2]);
+			Vector4 polyNormal = pn.normalize();
+			poly.setNormalWithVisualization(centroid, polyNormal);
+		}
+		else if (vertexCount >= 3) {
+			Vector4 edge1 = poly.getVertices()[1] - poly.getVertices()[0];
+			Vector4 edge2 = poly.getVertices()[2] - poly.getVertices()[0];
+			Vector4 calculatedNormal = edge1.cross(edge2).normalize();
+			poly.setNormalWithVisualization(centroid, calculatedNormal);
+		}
+		else {
+			std::cerr << "Skipping polygon with fewer than 3 vertices." << std::endl;
+			continue;
+		}
 
 		// Add the completed polygon to the global Scene
 		scene.addPolygon(poly);
@@ -206,6 +221,8 @@ bool CGSkelStoreData(IPObjectStruct* PObj) {
 
 	return true;
 }
+
+
 
 
 /*****************************************************************************

@@ -52,14 +52,21 @@ Matrix4 Matrix4::operator*(const Matrix4& other) const {
 
 // Transform a Vector4
 Vector4 Matrix4::transform(const Vector4& v) const {
-    return Vector4(
-        m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3]*v.w,
-        m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3]* v.w,
-        m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3]* v.w,
-        m[3][0] * v.x + m[3][1] * v.y + m[3][2] * v.z + m[3][3] * v.w
+    double newX = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3] * v.w;
+    double newY = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3] * v.w;
+    double newZ = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3] * v.w;
+    double newW = m[3][0] * v.x + m[3][1] * v.y + m[3][2] * v.z + m[3][3] * v.w;
 
-    );
+    // If w is not 1, normalize the result
+    if (newW != 1.0 && newW != 0.0) {
+        newX /= newW;
+        newY /= newW;
+        newZ /= newW;
+    }
+
+    return Vector4(newX, newY, newZ, 1.0);
 }
+
 
 // Translation matrix
 Matrix4 Matrix4::translate(double dx, double dy, double dz) {

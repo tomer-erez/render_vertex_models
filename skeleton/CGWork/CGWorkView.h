@@ -9,7 +9,7 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-
+#include "Poly.h"
 #include "gl\gl.h"    // Include the standard CGWork  headers
 #include "gl\glu.h"   // Add the utility library
 
@@ -30,6 +30,9 @@ public:
 public:
 
 private:
+	bool m_draw_poly_normals; //flag to choose whether to draw poly normals
+	bool m_draw_vertex_normals;//flag to choose whether to draw vertex normals
+
 	int m_nAxis;				// Axis of Action, X Y or Z
 	int m_nAction;				// Rotate, Translate, Scale
 	int m_nView;				// Orthographic, perspective
@@ -81,6 +84,12 @@ protected:
 
 	HBITMAP m_pDbBitMap;
 	CDC* m_pDbDC;
+
+	// New helper function declarations
+private:
+	void DrawPolygonEdges(CDC* pDC, const Poly& poly, double screenHeight, COLORREF color);
+	void DrawPolygonNormal(CDC* pDC, const Poly& poly, double screenHeight, COLORREF color);
+	void DrawVertexNormals(CDC* pDC, const Poly& poly, double screenHeight, COLORREF color);
 
 // Generated message map functions
 protected:

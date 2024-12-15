@@ -27,6 +27,11 @@ private:
     bool showNormals;             // Flag to show normals
     bool showBoundingBox;         // Flag to show bounding box
 
+    bool hasVertexNormals;        // Indicates if the scene has vertex normals
+    bool hasPolyNormals;          // Indicates if the scene has polygon normals
+
+    bool isFirstDraw;             // Indicates if it is the first drawing
+
 public:
     Scene();
 
@@ -42,8 +47,14 @@ public:
     // Apply a transformation to the entire scene
     void applyTransform(const Matrix4& transform);
 
+    // Apply transformation to the bounding box
+    void applyTransformToBoundingBox(const Matrix4& transform);
+
     // Calculate the bounding box of the scene
     void calculateBoundingBox();
+
+    // Calculate the bounding box from all vertices
+    void calculateBoundingBoxFromVertices();
 
     // Get the bounding box of the scene
     const BoundingBox& getBoundingBox() const;
@@ -62,12 +73,18 @@ public:
     // Get sensitivity value
     double getSensitivity() const;
 
-    // Flags for rendering options
     void setShowNormals(bool show);
     bool isShowNormals() const;
 
     void setShowBoundingBox(bool show);
     bool isShowBoundingBox() const;
+
+    // Attributes for normals
+    void updateHasVertexNormals(bool status);
+    bool hasVertexNormalsAttribute() const;
+
+    void updateIsFirstDraw(bool status);
+    bool getIsFirstDraw() const;
 
     // Clear the scene (reset the polygons, transformations, and bounding box)
     void clear();

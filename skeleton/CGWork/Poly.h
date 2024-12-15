@@ -11,6 +11,8 @@ private:
     std::vector<Vector4> vertices;       // List of vertices
     std::vector<Vector4> vertexNormals;  // Normals for each vertex
     Vector4 normal;                      // Normal vector for the polygon
+    Vector4 normalStart;                 // Start point for normal visualization
+    Vector4 normalEnd;                   // End point for normal visualization
     bool hasNormal;                      // Indicates if the polygon has a predefined normal
     COLORREF color;                      // Color of the polygon
 
@@ -39,7 +41,10 @@ public:
 
     // Polygon normal management
     void setNormal(const Vector4& normal);
+    void setNormalWithVisualization(const Vector4& centroid, const Vector4& direction, double scale = 25.0);
     const Vector4& getNormal() const;
+    const Vector4& getNormalStart() const;
+    const Vector4& getNormalEnd() const;
     bool hasPredefinedNormal() const;
 
     // Calculate normal from vertices
