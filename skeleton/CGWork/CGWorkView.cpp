@@ -5,6 +5,8 @@
 
 #include "CGWorkDoc.h"
 #include "CGWorkView.h"
+#include <algorithm> // Required for std::min
+#undef min           // Prevent conflicts with Windows macros
 
 #include <iostream>
 using std::cout;
@@ -20,6 +22,7 @@ static char THIS_FILE[] = __FILE__;
 
 #include "PngWrapper.h"
 #include "iritSkel.h"
+#include "LineDrawer.h"
 
 
 // For Status Bar access
@@ -241,23 +244,12 @@ BOOL CCGWorkView::OnEraseBkgnd(CDC* pDC)
 /////////////////////////////////////////////////////////////////////////////
 // CCGWorkView drawing
 /////////////////////////////////////////////////////////////////////////////
-double myMin(double a, double b) {
-	if (a < b) {
-		return a * 0.9; // Apply 10% margin to the smaller value
-	}
-	else {
-		return b * 0.9; // Apply 10% margin to the smaller value
-	}
-}
 
-#include "LineDrawer.h"
 
-void CCGWorkView::OnDraw(CDC* pDC)
-{
+void CCGWorkView::OnDraw(CDC* pDC) {
 	CCGWorkDoc* pDoc = GetDocument();
 	ASSERT_VALID(pDoc);
-	if (!pDoc)
-		return;
+	if (!pDoc) return;
 
 	CRect r;
 	GetClientRect(&r);
@@ -266,79 +258,52 @@ void CCGWorkView::OnDraw(CDC* pDC)
 	CDC* pDCToUse = m_pDbDC;
 	pDCToUse->FillSolidRect(&r, scene.getBackgroundColor()); // Use scene's background color
 
-	// Compute the bounding box of the scene
-	double minX = DBL_MAX, minY = DBL_MAX, maxX = DBL_MIN, maxY = DBL_MIN;
-
-	for (const Poly& poly : scene.getPolygons()) {
-		const std::vector<Vector4>& vertices = poly.getVertices();
-		for (const Vector4& vertex : vertices) {
-			if (vertex.x < minX) minX = vertex.x;
-			if (vertex.y < minY) minY = vertex.y;
-			if (vertex.x > maxX) maxX = vertex.x;
-			if (vertex.y > maxY) maxY = vertex.y;
-		}
-	}
-
-	// Compute the scaling factor to fit the scene within the screen
-	double sceneWidth = maxX - minX;
-	double sceneHeight = maxY - minY;
-
-	double scaleX = r.Width() / sceneWidth;
-	double scaleY = r.Height() / sceneHeight;
-
-	// Use custom myMin to determine the scaling factor
-	double scale = myMin(scaleX, scaleY);
-
-	// Compute translation to center the scene
-	double offsetX = -minX * scale + (r.Width() - (sceneWidth * scale)) / 2;
-	double offsetY = -minY * scale + (r.Height() - (sceneHeight * scale)) / 2;
+	double screenWidth = static_cast<double>(r.Width());
+	double screenHeight = static_cast<double>(r.Height());
 
 	// Iterate through the polygons in the scene and draw them
 	for (const Poly& poly : scene.getPolygons()) {
 		const std::vector<Vector4>& vertices = poly.getVertices();
 		COLORREF color = poly.getColor(); // Get the color for the polygon
 
-		// Draw lines between consecutive vertices and wrap to the first vertex
 		for (size_t i = 0; i < vertices.size(); ++i) {
 			const Vector4& start = vertices[i];
-			const Vector4& end = vertices[(i + 1) % vertices.size()]; // Wrap around
-
-			// Apply scaling and translation to screen space
-			int x1 = static_cast<int>(start.x * scale + offsetX);
-			int y1 = static_cast<int>(-start.y * scale + offsetY); // Flip Y for screen space
-			int x2 = static_cast<int>(end.x * scale + offsetX);
-			int y2 = static_cast<int>(-end.y * scale + offsetY);
+			const Vector4& end = vertices[(i + 1) % vertices.size()]; //if exceeded vertices connect with first
 
 			// Draw the line using LineDrawer
 			LineDrawer::DrawLine(
 				pDCToUse->m_hDC,
-				Vector4(static_cast<double>(x1), static_cast<double>(y1), 0.0),
-				Vector4(static_cast<double>(x2), static_cast<double>(y2), 0.0),
-				color // Use the polygon's color
+				Vector4(static_cast<double>(start.x), static_cast<double>(screenHeight - start.y), 0.0),
+				Vector4(static_cast<double>( end.x), static_cast<double>(screenHeight - end.y), 0.0),
+				color
 			);
 		}
 	}
 
-	// Copy the off-screen buffer to the screen
 	if (pDCToUse != m_pDC) {
 		m_pDC->BitBlt(r.left, r.top, r.Width(), r.Height(), pDCToUse, r.left, r.top, SRCCOPY);
 	}
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// User Defined Functions
 
-
+void CCGWorkView::RenderScene() {
+	// do nothing. This is supposed to be overriden...
+	return;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
 // CCGWorkView CGWork Finishing and clearing...
 
-void CCGWorkView::OnDestroy() 
+void CCGWorkView::OnDestroy()
 {
 	CView::OnDestroy();
 
 	// delete the DC
-	if ( m_pDC ) {
+	if (m_pDC) {
 		delete m_pDC;
 	}
 
@@ -349,34 +314,75 @@ void CCGWorkView::OnDestroy()
 
 
 
-/////////////////////////////////////////////////////////////////////////////
-// User Defined Functions
 
-void CCGWorkView::RenderScene() {
-	// do nothing. This is supposed to be overriden...
 
-	return;
-}
 
-//this is called when the user clicks to upload file
-void CCGWorkView::OnFileLoad() 
-{
-	TCHAR szFilters[] = _T ("IRIT Data Files (*.itd)|*.itd|All Files (*.*)|*.*||");
 
-	CFileDialog dlg(TRUE, _T("itd"), _T("*.itd"), OFN_FILEMUSTEXIST | OFN_HIDEREADONLY ,szFilters);
 
-	if (dlg.DoModal () == IDOK) {
-		m_strItdFileName = dlg.GetPathName();		// Full path and filename
-		scene.clear();
 
-		PngWrapper p;
-		CGSkelProcessIritDataFiles(m_strItdFileName, 1);//this  function will parse the file 
-		// Open the file and read it.
-		// Your code here...
+void CCGWorkView::OnFileLoad() {
+	TCHAR szFilters[] = _T("IRIT Data Files (*.itd)|*.itd|All Files (*.*)|*.*||");
 
-		Invalidate();	// force a WM_PAINT for drawing.
-	} 
+	CFileDialog dlg(TRUE, _T("itd"), _T("*.itd"), OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, szFilters);
 
+	if (dlg.DoModal() == IDOK) {
+		m_strItdFileName = dlg.GetPathName(); // Full path and filename
+		scene.clear(); // Clear the existing scene data
+
+		// Load and process the IRIT file
+		CGSkelProcessIritDataFiles(m_strItdFileName, 1);
+
+		// Calculate bounding box and determine initial transformation
+		scene.calculateBoundingBox();
+
+		const BoundingBox& bbox = scene.getBoundingBox();
+		const Vector4& min = bbox.min;
+		const Vector4& max = bbox.max;
+
+		Vector4 center = Vector4(
+			(min.x + max.x) / 2.0,
+			(min.y + max.y) / 2.0,
+			(min.z + max.z) / 2.0,
+			1.0 // Maintain consistent w for homogeneous coordinates
+		);
+		CRect r;
+		GetClientRect(&r);
+
+		double screenWidth = static_cast<double>(r.Width());
+		double screenHeight = static_cast<double>(r.Height());
+		double marginFactor = 0.25;
+
+		double sceneWidth = max.x - min.x;
+		double sceneHeight = max.y - min.y;
+
+		double targetWidth = screenWidth * (1.0 - marginFactor);
+		double targetHeight = screenHeight * (1.0 - marginFactor);
+
+		double scaleX = sceneWidth > 1e-6 ? targetWidth / sceneWidth : 1.0;
+		double scaleY = sceneHeight > 1e-6 ? targetHeight / sceneHeight : 1.0;
+
+		double sceneScale = (scaleX < scaleY) ? scaleX : scaleY;
+
+		Matrix4 t; // Starts as the identity matrix
+
+		Matrix4 translateToOrigin = Matrix4::translate(-center.x, -center.y, -center.z);
+		Matrix4 scaling = Matrix4::scale(sceneScale, sceneScale, sceneScale);
+		Matrix4 translateToScreen = Matrix4::translate(screenWidth / 2.0, screenHeight / 2.0, 0.0);
+		
+		// Translate to origin (center the scene)
+		t = t * translateToScreen;
+
+		// Scale the scene to fit within the target screen area
+		t = t * scaling;
+		// Translate to the screen center
+		t = t * translateToOrigin;
+
+		scene.applyTransform(t);
+
+		scene.updateIsFirstDraw(false);
+
+		Invalidate(); // Trigger WM_PAINT for redraw
+	}
 }
 
 

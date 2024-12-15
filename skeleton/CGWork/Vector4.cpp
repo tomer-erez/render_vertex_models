@@ -21,6 +21,12 @@ Vector4 Vector4::operator*(double scalar) const {
     return Vector4(x * scalar, y * scalar, z * scalar, w * scalar);
 }
 
+// Scalar division
+Vector4 Vector4::operator/(double scalar) const {
+    return Vector4(x / scalar, y / scalar, z / scalar, w / scalar);
+}
+
+
 // Dot product
 double Vector4::dot(const Vector4& v) const {
     return x * v.x + y * v.y + z * v.z + w * v.w;
