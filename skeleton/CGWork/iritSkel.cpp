@@ -13,6 +13,7 @@
 
 */
 #include "Vector4.h" // Include Vector4
+#include "Vertex.h" // Include Vector4
 #include "Poly.h"    // Include Poly (renamed from Polygon)
 #include "Scene.h"  // Include the Scene class definition
 Scene scene; // Global scene object to hold all polygons
@@ -52,15 +53,15 @@ IPFreeformConvStateStruct CGSkelFFCState = {
 * RETURN VALUE:                                                              *
 *   bool:		false - fail, true - success.                                *
 *****************************************************************************/
-bool CGSkelProcessIritDataFiles(CString &FileNames, int NumFiles) // parser process wrapper
+bool CGSkelProcessIritDataFiles(CString& FileNames, int NumFiles) // parser process wrapper
 {
-	IPObjectStruct *PObjects;
+	IPObjectStruct* PObjects;
 	IrtHmgnMatType CrntViewMat;
 	IPTraverseObjHierarchyStruct TraversState;
 	/* Get the data files: */
 	IPSetFlattenObjects(FALSE);
 	CStringA CStr(FileNames);
-	if ((PObjects = IPGetDataFiles((const char* const *)&CStr, 1/*NumFiles*/, TRUE, FALSE)) == NULL)
+	if ((PObjects = IPGetDataFiles((const char* const*)&CStr, 1/*NumFiles*/, TRUE, FALSE)) == NULL)
 		return false;
 	PObjects = IPResolveInstances(PObjects);
 
@@ -77,7 +78,7 @@ bool CGSkelProcessIritDataFiles(CString &FileNames, int NumFiles) // parser proc
 
 	/* Traverse ALL the parsed data, recursively. */
 	IPTraverseObjHierarchyInitState(&TraversState);
-	TraversState.ApplyFunc = (IPApplyObjFuncType) CGSkelDumpOneTraversedObject;//call the traverse to parse
+	TraversState.ApplyFunc = (IPApplyObjFuncType)CGSkelDumpOneTraversedObject;//call the traverse to parse
 	IRIT_GEN_COPY(TraversState.Mat, CrntViewMat, sizeof(IrtHmgnMatType));
 	IPTraverseObjListHierarchy(PObjects, &TraversState);
 	return true;
@@ -96,19 +97,19 @@ bool CGSkelProcessIritDataFiles(CString &FileNames, int NumFiles) // parser proc
 * RETURN VALUE:                                                              *
 *   void									                                 *
 *****************************************************************************/
-void CGSkelDumpOneTraversedObject(IPObjectStruct *PObj,
-                                  IrtHmgnMatType Mat,
-                                  void *Data)
+void CGSkelDumpOneTraversedObject(IPObjectStruct* PObj,
+	IrtHmgnMatType Mat,
+	void* Data)
 {
-	IPObjectStruct *PObjs;
+	IPObjectStruct* PObjs;
 
 	if (IP_IS_FFGEOM_OBJ(PObj))
 		PObjs = IPConvertFreeForm(PObj, &CGSkelFFCState);
 	else
 		PObjs = PObj;
 
-	for (PObj = PObjs; PObj != NULL; PObj = PObj -> Pnext)
-		if (!CGSkelStoreData(PObj)) 
+	for (PObj = PObjs; PObj != NULL; PObj = PObj->Pnext)
+		if (!CGSkelStoreData(PObj))
 			exit(1);
 }
 
@@ -124,7 +125,6 @@ void CGSkelDumpOneTraversedObject(IPObjectStruct *PObj,
 *   bool:		false - fail, true - success.                                *
 *****************************************************************************/
 bool CGSkelStoreData(IPObjectStruct* PObj) {
-	int i;
 	const char* Str;
 	double RGB[3], Transp;
 	IPPolygonStruct* PPolygon;
@@ -180,47 +180,48 @@ bool CGSkelStoreData(IPObjectStruct* PObj) {
 
 		PVertex = PPolygon->PVertex;
 
+		//Iterate over the vertices of the polygon
 		do {
-			Vector4 vertex(PVertex->Coord[0], PVertex->Coord[1], PVertex->Coord[2]);
-			centroid = centroid + vertex;
-			poly.addVertex(vertex);
-			vertexCount++;
+			Vertex vertex(PVertex->Coord[0], PVertex->Coord[1], PVertex->Coord[2]); //create vertex from the file coordinates
+			vertexCount++;//update cound vertices
+			centroid = centroid + vertex; // update the centroid(later will devide by vertex count
 
+			// Process vertex normals (if available)
 			if (IP_HAS_NORMAL_VRTX(PVertex)) {
-				Vector4 vertexNormal(PVertex->Normal[0], PVertex->Normal[1], PVertex->Normal[2]);
-				vertexNormal = vertexNormal.normalize();
-				poly.addVertexNormal(vertexNormal);
+				const Vector4 vertexNormal = Vector4(PVertex->Normal[0], PVertex->Normal[1], PVertex->Normal[2]).normalize();//normalize the vertex normal
+				vertex.setNormal(vertex, vertex + vertexNormal); // Add vertex normal with start and end points
 				scene.updateHasVertexNormals(true);
 			}
-
-			PVertex = PVertex->Pnext;
+			poly.addVertex(vertex); // assign the vertex it to the polygon
+			PVertex = PVertex->Pnext; //advance the pointer to the next vertex
 		} while (PVertex != PPolygon->PVertex && PVertex != NULL);
+		centroid = centroid / static_cast<double>(vertexCount); // Finalize centroid. if the polygon is convex than the cenroid should be inside.
 
-		centroid = centroid / static_cast<double>(vertexCount);
 
-		// Set the polygon normal
+		// Process polygon normals if they exist in the file
 		if (IP_HAS_PLANE_POLY(PPolygon)) {
-			Vector4 pn(PPolygon->Plane[0], PPolygon->Plane[1], PPolygon->Plane[2]);
-			Vector4 polyNormal = pn.normalize();
-			poly.setNormalWithVisualization(centroid, polyNormal);
+			const Vector4 pn = Vector4(PPolygon->Plane[0], PPolygon->Plane[1], PPolygon->Plane[2]).normalize(); // the normal to the polygon plane
+			poly.setPolyNormal(PolyNormal(centroid, centroid + pn)); // Stores start and end points
 		}
+		// calculate polynormal if not exist in the file
 		else if (vertexCount >= 3) {
-			Vector4 edge1 = poly.getVertices()[1] - poly.getVertices()[0];
-			Vector4 edge2 = poly.getVertices()[2] - poly.getVertices()[0];
-			Vector4 calculatedNormal = edge1.cross(edge2).normalize();
-			poly.setNormalWithVisualization(centroid, calculatedNormal);
+			// Calculate polygon normal from the first three vertices
+			const std::vector<Vertex>& vertices = poly.getVertices(); // Correct type
+			const Vector4 edge1 = vertices[1] - vertices[0];
+			const Vector4 edge2 = vertices[2] - vertices[0];
+			const Vector4 calculatedNormal = edge1.cross(edge2).normalize(); //cross the edges to get the normal to the plane
+			poly.setPolyNormal(PolyNormal(centroid, centroid + calculatedNormal)); // Stores start and end points
 		}
 		else {
-			std::cerr << "Skipping polygon with fewer than 3 vertices." << std::endl;
+			// Skip polygons with fewer than 3 vertices// these should not exist
 			continue;
 		}
-
 		// Add the completed polygon to the global Scene
 		scene.addPolygon(poly);
 	}
-
 	return true;
 }
+
 
 
 
@@ -236,7 +237,7 @@ bool CGSkelStoreData(IPObjectStruct* PObj) {
 * RETURN VALUE:                                                              *
 *   int:    TRUE if object has color, FALSE otherwise.                       *
 *****************************************************************************/
-int CGSkelGetObjectColor(IPObjectStruct *PObj, double RGB[3])
+int CGSkelGetObjectColor(IPObjectStruct* PObj, double RGB[3])
 {
 	static int TransColorTable[][4] = {
 		{ /* BLACK	*/   0,    0,   0,   0 },
@@ -270,16 +271,16 @@ int CGSkelGetObjectColor(IPObjectStruct *PObj, double RGB[3])
 
 	if (AttrGetObjectRGBColor(PObj,
 		&RGBIColor[0], &RGBIColor[1], &RGBIColor[2])) {
-			for (i = 0; i < 3; i++)
-				RGB[i] = RGBIColor[i] / 255.0;
+		for (i = 0; i < 3; i++)
+			RGB[i] = RGBIColor[i] / 255.0;
 
-			return TRUE;
+		return TRUE;
 	}
 	else if ((Color = AttrGetObjectColor(PObj)) != IP_ATTR_NO_COLOR) {
 		for (i = 0; TransColorTable[i][0] >= 0; i++) {
 			if (TransColorTable[i][0] == Color) {
 				for (j = 0; j < 3; j++)
-					RGB[j] = TransColorTable[i][j+1] / 255.0;
+					RGB[j] = TransColorTable[i][j + 1] / 255.0;
 				return TRUE;
 			}
 		}
@@ -298,7 +299,7 @@ int CGSkelGetObjectColor(IPObjectStruct *PObj, double RGB[3])
 * RETURN VALUE:                                                              *
 *   char *:    Name of volumetric texture map to apply, NULL if none.        *
 *****************************************************************************/
-const char *CGSkelGetObjectTexture(IPObjectStruct *PObj)
+const char* CGSkelGetObjectTexture(IPObjectStruct* PObj)
 {
 	return AttrGetObjectStrAttrib(PObj, "texture");
 }
@@ -313,7 +314,7 @@ const char *CGSkelGetObjectTexture(IPObjectStruct *PObj)
 * RETURN VALUE:                                                              *
 *   char *:    Name of parametric texture map to apply, NULL if none.        *
 *****************************************************************************/
-const char *CGSkelGetObjectPTexture(IPObjectStruct *PObj)
+const char* CGSkelGetObjectPTexture(IPObjectStruct* PObj)
 {
 	return AttrGetObjectStrAttrib(PObj, "ptexture");
 }
@@ -329,7 +330,7 @@ const char *CGSkelGetObjectPTexture(IPObjectStruct *PObj)
 * RETURN VALUE:                                                              *
 *   int:    TRUE if object has transparency, FALSE otherwise.                *
 *****************************************************************************/
-int CGSkelGetObjectTransp(IPObjectStruct *PObj, double *Transp)
+int CGSkelGetObjectTransp(IPObjectStruct* PObj, double* Transp)
 {
 	*Transp = AttrGetObjectRealAttrib(PObj, "transp");
 

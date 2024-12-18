@@ -10,6 +10,8 @@
 #endif // _MSC_VER > 1000
 
 #include "Poly.h"
+#include "Scene.h"
+
 #include "gl\gl.h"    // Include the standard CGWork  headers
 #include "gl\glu.h"   // Add the utility library
 
@@ -22,22 +24,23 @@ protected: // create from serialization only
 	CCGWorkView();
 	DECLARE_DYNCREATE(CCGWorkView)
 
-// Attributes
+	// Attributes
 public:
 	CCGWorkDoc* GetDocument();
 
-// Operations
+	// Operations
 public:
 
 private:
 	bool m_draw_poly_normals; //flag to choose whether to draw poly normals
 	bool m_draw_vertex_normals;//flag to choose whether to draw vertex normals
-
+	bool m_draw_bounding_box;
+	bool m_uniform_color;
 	int m_nAxis;				// Axis of Action, X Y or Z
 	int m_nAction;				// Rotate, Translate, Scale
 	int m_nView;				// Orthographic, perspective
 	bool m_bIsPerspective;			// is the view perspective
-	
+
 	CString m_strItdFileName;		// file name of IRIT data
 
 	int m_nLightShading;			// shading: Flat, Gouraud.
@@ -54,10 +57,10 @@ private:
 // Overrides
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CCGWorkView)
-	public:
+public:
 	virtual void OnDraw(CDC* pDC);  // overridden to draw this view
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
-	protected:
+protected:
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -77,7 +80,7 @@ protected:
 
 
 	HGLRC    m_hRC;			// holds the Rendering Context
-	CDC*     m_pDC;			// holds the Device Context
+	CDC* m_pDC;			// holds the Device Context
 	int m_WindowWidth;		// hold the windows width
 	int m_WindowHeight;		// hold the windows height
 	double m_AspectRatio;		// hold the fixed Aspect Ration
@@ -87,11 +90,12 @@ protected:
 
 	// New helper function declarations
 private:
-	void DrawPolygonEdges(CDC* pDC, const Poly& poly, double screenHeight, COLORREF color);
+	void DrawPolygonEdges(CDC* pDC, const Poly& poly, double screenHeight, COLORREF color, bool flagDrawNormal);
 	void DrawPolygonNormal(CDC* pDC, const Poly& poly, double screenHeight, COLORREF color);
 	void DrawVertexNormals(CDC* pDC, const Poly& poly, double screenHeight, COLORREF color);
-
-// Generated message map functions
+	void DrawBoundingBox(CDC* pDC, const BoundingBox& bbox, double screenHeight, COLORREF color);
+	void DrawLineHelper(CDC* pDC, const Vector4& start, const Vector4& end, double screenHeight, COLORREF color);
+	// Generated message map functions
 protected:
 	//{{AFX_MSG(CCGWorkView)
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
@@ -128,7 +132,9 @@ public:
 
 #ifndef _DEBUG  // debug version in CGWorkView.cpp
 inline CCGWorkDoc* CCGWorkView::GetDocument()
-   { return (CCGWorkDoc*)m_pDocument; }
+{
+	return (CCGWorkDoc*)m_pDocument;
+}
 #endif
 
 /////////////////////////////////////////////////////////////////////////////

@@ -7,11 +7,11 @@
 
 class Vector4 {
 public:
-    double x, y, z,w;
+    double x, y, z, w;
 
     // Constructors
     Vector4();
-    Vector4(double x, double y, double z, double w=1);
+    Vector4(double x, double y, double z, double w = 1);
 
     // Vector operations
     Vector4 operator+(const Vector4& v) const;

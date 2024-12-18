@@ -1,4 +1,5 @@
 #include "Scene.h"
+
 #include <algorithm>
 #include <limits>
 
@@ -12,8 +13,8 @@ Scene::Scene()
     sensitivity(1.0),                   // Default sensitivity
     showNormals(false),                 // Default: don't show normals
     hasVertexNormals(false),            // Default: no vertex normals
-    hasPolyNormals(false),              // Default: no polygon normals
     isFirstDraw(true),
+    hasBoundingBox(false),
     showBoundingBox(false) {}           // Default: don't show bounding box
 
 // Add a polygon to the scene
@@ -32,21 +33,49 @@ size_t Scene::getPolygonCount() const {
     return polygons.size();
 }
 
-// Apply a transformation to the entire scene
-void Scene::applyTransform(const Matrix4& transform) {
-    sceneTransform = transform * sceneTransform; // Pre-multiply to apply new transform first
 
-    // Apply transformation to all vertices in polygons
+void Scene::applyTransform(const Matrix4& transform) {
+
+
+    sceneTransform = transform * sceneTransform; // Pre-multiply to apply new transform first
+    Matrix4 normalTransform = sceneTransform.inverse().transpose(); // Inverse-transpose for normals
+
+    // Apply transformation to all polygons in the scene
     for (Poly& poly : polygons) {
-        for (Vector4& vertex : poly.getVertices()) {
-            vertex = sceneTransform.transform(vertex);
+
+        // Apply the full transformation to all vertices
+        for (Vertex& vertex : poly.getVertices()) {
+            // Transform vertex position
+            vertex = transform.transform(vertex);
+
+            if (vertex.getHasNormal()) {
+                // Update normal start to match the transformed vertex position
+                Vector4 transformedStart = transform.transform(vertex.getNormalStart());
+
+                // Transform the normal direction using the inverse-transpose matrix
+                Vector4 direction = vertex.getNormalEnd() - vertex.getNormalStart();
+                Vector4 transformedDirection = normalTransform.transform(direction).normalize() * 13.0;
+
+                // Update the vertex normal with the transformed start and transformed direction
+                vertex.setNormal(transformedStart, transformedStart + transformedDirection);
+            }
+        }
+
+        // Apply the transformation to polygon normals
+        if (poly.hasPolyNormalDefined()) {
+            Vector4 direction = poly.getPolyNormal().end - poly.getPolyNormal().start;
+            Vector4 transformedDirection = normalTransform.transform(direction).normalize() * 13.0;
+            Vector4 transformedStart = transform.transform(poly.getPolyNormal().start);
+            poly.setPolyNormal(PolyNormal(transformedStart, transformedStart + transformedDirection));
         }
     }
 
     // Apply the transformation to the bounding box
-    applyTransformToBoundingBox(sceneTransform);
+    applyTransformToBoundingBox(transform); // Use the full transformation for the bounding box
 
 }
+
+
 
 void Scene::applyTransformToBoundingBox(const Matrix4& transform) {
     Vector4 corners[8] = {
@@ -76,6 +105,7 @@ void Scene::applyTransformToBoundingBox(const Matrix4& transform) {
 // Calculate the bounding box of the scene
 void Scene::calculateBoundingBox() {
     calculateBoundingBoxFromVertices();
+    hasBoundingBox = true;
 }
 
 // Calculate the bounding box from all vertices
@@ -89,15 +119,11 @@ void Scene::calculateBoundingBoxFromVertices() {
     boundingBox.max = Vector4(DBL_MIN, DBL_MIN, DBL_MIN, 1.0);
 
     for (const Poly& poly : polygons) {
-        for (const Vector4& vertex : poly.getVertices()) {
+        for (const Vertex& vertex : poly.getVertices()) {
             boundingBox.min.updateMin(vertex);
             boundingBox.max.updateMax(vertex);
         }
     }
-    // Debugging output for bounding box
-    std::cout << "Bounding Box Min: " << boundingBox.min.x << ", " << boundingBox.min.y << ", " << boundingBox.min.z << std::endl;
-    std::cout << "Bounding Box Max: " << boundingBox.max.x << ", " << boundingBox.max.y << ", " << boundingBox.max.z << std::endl;
-
 }
 
 // Get the bounding box of the scene
@@ -178,5 +204,4 @@ void Scene::clear() {
     sceneTransform = Matrix4(); // Reset to identity matrix
     boundingBox = { Vector4(DBL_MAX, DBL_MAX, DBL_MAX, 1.0), Vector4(DBL_MIN, DBL_MIN, DBL_MIN, 1.0) };
     hasVertexNormals = false;
-    hasPolyNormals = false;
 }
