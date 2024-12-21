@@ -12,19 +12,14 @@ class PolyNormal {
 public:
     Vector4 start;
     Vector4 end;
-    PolyNormal() : start(Vector4()), end(Vector4()) {}
-    PolyNormal(const Vector4& start, const Vector4& end) : start(start), end(end) {}
-    const Vector4& getStart() const { return start; }
-    const Vector4& getEnd() const { return end; }
-    // Getters for start point
-    double getStartX() const { return start.x; }
-    double getStartY() const { return start.y; }
-    double getStartZ() const { return start.z; }
+    bool wasProvidedFromFile;
 
-    // Getters for end point
-    double getEndX() const { return end.x; }
-    double getEndY() const { return end.y; }
-    double getEndZ() const { return end.z; }
+    // Default constructor
+    PolyNormal() : start(Vector4()), end(Vector4()), wasProvidedFromFile(false) {}
+
+    // Constructor with start and end points
+    PolyNormal(const Vector4& start, const Vector4& end, bool wasProvidedFromFile = false)
+        : start(start), end(end), wasProvidedFromFile(wasProvidedFromFile) {}
 };
 
 

@@ -2,6 +2,11 @@ transformations:
 rotation, scaling, translation
 
 Set View - projections:
+
+
+
+
+
 orthographic and/or perspective projections
 
 CGSkelGetObjectColor() should be used to apply all lines with the same color

@@ -24,6 +24,21 @@ class CCGWorkApp : public CWinApp
 public:
 	CCGWorkApp();
 
+	int t_slider_value;
+	int r_slider_value;
+	int s_slider_value;
+	int p_slider_polyFineness_value;
+
+	COLORREF Object_color;
+	COLORREF Background_color;
+	COLORREF vertex_normals_color;
+	COLORREF poly_normals_color;
+	double d;
+	double fovy;
+	CPoint start;
+	CPoint end;
+
+
 // Overrides
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CCGWorkApp)

@@ -15,91 +15,68 @@ Scene::Scene()
     hasVertexNormals(false),            // Default: no vertex normals
     isFirstDraw(true),
     hasBoundingBox(false),
-    showBoundingBox(false) {}           // Default: don't show bounding box
+    showBoundingBox(false){
+    polygons = new std::vector<Poly*>;
+
+}           // Default: don't show bounding box
 
 // Add a polygon to the scene
-void Scene::addPolygon(const Poly& poly) {
-    polygons.push_back(poly);
+void Scene::addPolygon(Poly* poly) {
+    polygons->push_back(poly);
     calculateBoundingBox(); // Recalculate bounding box
 }
 
 // Get all polygons in the scene
-const std::vector<Poly>& Scene::getPolygons() const {
+const std::vector<Poly*>* Scene::getPolygons() const {
     return polygons;
 }
 
 // Get the total number of polygons
 size_t Scene::getPolygonCount() const {
-    return polygons.size();
+    return polygons->size();
 }
 
-
+//applying a transformation to the whole scene
+// Applying a transformation to the whole scene
 void Scene::applyTransform(const Matrix4& transform) {
 
-
-    sceneTransform = transform * sceneTransform; // Pre-multiply to apply new transform first
-    Matrix4 normalTransform = sceneTransform.inverse().transpose(); // Inverse-transpose for normals
+    Matrix4 normalTransform = transform.inverse().transpose(); // Inverse-transpose for transforming normals
 
     // Apply transformation to all polygons in the scene
-    for (Poly& poly : polygons) {
-
+    for (Poly* poly : *polygons) {
         // Apply the full transformation to all vertices
-        for (Vertex& vertex : poly.getVertices()) {
+        for (Vertex& vertex : poly->getVertices()) {
             // Transform vertex position
             vertex = transform.transform(vertex);
 
+            // Transform normals if the vertex has a normal
             if (vertex.getHasNormal()) {
-                // Update normal start to match the transformed vertex position
-                Vector4 transformedStart = transform.transform(vertex.getNormalStart());
-
-                // Transform the normal direction using the inverse-transpose matrix
-                Vector4 direction = vertex.getNormalEnd() - vertex.getNormalStart();
-                Vector4 transformedDirection = normalTransform.transform(direction).normalize() * 13.0;
-
-                // Update the vertex normal with the transformed start and transformed direction
-                vertex.setNormal(transformedStart, transformedStart + transformedDirection);
+                const Vector4 direction = vertex.getNormalEnd() - vertex.getNormalStart();
+                const Vector4 transformedDirection = normalTransform.transform(direction).normalize() * 16.0;
+                const Vector4 transformedStart = transform.transform(vertex.getNormalStart());
+                vertex.setNormal(transformedStart, transformedStart + transformedDirection, vertex.isNormalProvidedFromFile());                // Keep the flag indicating whether the normal came from the file
             }
         }
 
-        // Apply the transformation to polygon normals
-        if (poly.hasPolyNormalDefined()) {
-            Vector4 direction = poly.getPolyNormal().end - poly.getPolyNormal().start;
-            Vector4 transformedDirection = normalTransform.transform(direction).normalize() * 13.0;
-            Vector4 transformedStart = transform.transform(poly.getPolyNormal().start);
-            poly.setPolyNormal(PolyNormal(transformedStart, transformedStart + transformedDirection));
+        // Apply the transformation to polygon normals if they exist
+        if (poly->hasPolyNormalDefined()) {
+            Vector4 direction = poly->getPolyNormal().end - poly->getPolyNormal().start;
+            Vector4 transformedDirection = normalTransform.transform(direction).normalize() * 16.0;
+
+            Vector4 transformedStart = transform.transform(poly->getPolyNormal().start);
+            const bool originalFlag = poly->getPolyNormal().wasProvidedFromFile;
+
+            // Correctly instantiate the PolyNormal object
+            PolyNormal transformedPolyNormal(transformedStart, transformedStart + transformedDirection, originalFlag);
+            poly->setPolyNormal(transformedPolyNormal);
         }
     }
 
     // Apply the transformation to the bounding box
-    applyTransformToBoundingBox(transform); // Use the full transformation for the bounding box
+    boundingBox.applyTransform(transform);
 
-}
+    updateObjectCenter();
 
-
-
-void Scene::applyTransformToBoundingBox(const Matrix4& transform) {
-    Vector4 corners[8] = {
-        boundingBox.min,
-        Vector4(boundingBox.min.x, boundingBox.min.y, boundingBox.max.z, 1),
-        Vector4(boundingBox.min.x, boundingBox.max.y, boundingBox.min.z, 1),
-        Vector4(boundingBox.min.x, boundingBox.max.y, boundingBox.max.z, 1),
-        Vector4(boundingBox.max.x, boundingBox.min.y, boundingBox.min.z, 1),
-        Vector4(boundingBox.max.x, boundingBox.min.y, boundingBox.max.z, 1),
-        Vector4(boundingBox.max.x, boundingBox.max.y, boundingBox.min.z, 1),
-        boundingBox.max
-    };
-
-    Vector4 newMin(DBL_MAX, DBL_MAX, DBL_MAX, 1);
-    Vector4 newMax(DBL_MIN, DBL_MIN, DBL_MIN, 1);
-
-    for (const Vector4& corner : corners) {
-        Vector4 transformedCorner = transform.transform(corner);
-        newMin.updateMin(transformedCorner);
-        newMax.updateMax(transformedCorner);
-    }
-
-    boundingBox.min = newMin;
-    boundingBox.max = newMax;
 }
 
 // Calculate the bounding box of the scene
@@ -110,25 +87,62 @@ void Scene::calculateBoundingBox() {
 
 // Calculate the bounding box from all vertices
 void Scene::calculateBoundingBoxFromVertices() {
-    if (polygons.empty()) {
-        boundingBox.min = Vector4(0, 0, 0, 1);
-        boundingBox.max = Vector4(0, 0, 0, 1);
+    if (polygons->empty()) {
+        // Set all corners to (0, 0, 0) if there are no polygons
+        boundingBox.TLF = Vector4(0, 0, 0, 1);
+        boundingBox.TLB = Vector4(0, 0, 0, 1);
+        boundingBox.TRF = Vector4(0, 0, 0, 1);
+        boundingBox.TRB = Vector4(0, 0, 0, 1);
+        boundingBox.BLF = Vector4(0, 0, 0, 1);
+        boundingBox.BLB = Vector4(0, 0, 0, 1);
+        boundingBox.BRF = Vector4(0, 0, 0, 1);
+        boundingBox.BRB = Vector4(0, 0, 0, 1);
         return;
     }
-    boundingBox.min = Vector4(DBL_MAX, DBL_MAX, DBL_MAX, 1.0);
-    boundingBox.max = Vector4(DBL_MIN, DBL_MIN, DBL_MIN, 1.0);
 
-    for (const Poly& poly : polygons) {
-        for (const Vertex& vertex : poly.getVertices()) {
-            boundingBox.min.updateMin(vertex);
-            boundingBox.max.updateMax(vertex);
+    // Initialize min and max to extreme values
+    Vector4 newMin(DBL_MAX, DBL_MAX, DBL_MAX, 1);
+    Vector4 newMax(-DBL_MAX, -DBL_MAX, -DBL_MAX, 1);
+
+    // Find the min and max values from all vertices
+    for (Poly* poly : *polygons) {
+        for (const Vertex& vertex : poly->getVertices()) {
+            newMin.updateMin(vertex); // Update the minimum corner
+            newMax.updateMax(vertex); // Update the maximum corner
         }
     }
+
+    // Set the bounding box corners based on min and max
+    boundingBox.TLF = Vector4(newMin.x, newMax.y, newMax.z, 1.0); // Top-Left-Forward
+    boundingBox.TLB = Vector4(newMin.x, newMax.y, newMin.z, 1.0); // Top-Left-Backward
+    boundingBox.TRF = Vector4(newMax.x, newMax.y, newMax.z, 1.0); // Top-Right-Forward
+    boundingBox.TRB = Vector4(newMax.x, newMax.y, newMin.z, 1.0); // Top-Right-Backward
+    boundingBox.BLF = Vector4(newMin.x, newMin.y, newMax.z, 1.0); // Bottom-Left-Forward
+    boundingBox.BLB = Vector4(newMin.x, newMin.y, newMin.z, 1.0); // Bottom-Left-Backward
+    boundingBox.BRF = Vector4(newMax.x, newMin.y, newMax.z, 1.0); // Bottom-Right-Forward
+    boundingBox.BRB = Vector4(newMax.x, newMin.y, newMin.z, 1.0); // Bottom-Right-Backward
 }
 
 // Get the bounding box of the scene
 const BoundingBox& Scene::getBoundingBox() const {
     return boundingBox;
+}
+
+Vector4 Scene::getObjectCenter() {
+    return objectCenter;
+}
+
+void Scene::updateObjectCenter() {
+    const BoundingBox& bbox = getBoundingBox();
+    std::vector<Vector4> corners = bbox.getCorners();
+
+    // Calculate the center of the bounding box
+    objectCenter = Vector4(
+        (corners[0].x + corners[7].x) / 2.0,
+        (corners[0].y + corners[7].y) / 2.0,
+        (corners[0].z + corners[7].z) / 2.0,
+        1.0 // Homogeneous coordinate
+    );
 }
 
 // Set custom colors for wireframe, normals, and background
@@ -152,12 +166,12 @@ COLORREF Scene::getBackgroundColor() const {
 }
 
 // Set sensitivity for transformations
-void Scene::setSensitivity(double newSensitivity) {
+void Scene::setSensitivity(float newSensitivity) {
     sensitivity = newSensitivity;
 }
 
 // Get sensitivity value
-double Scene::getSensitivity() const {
+float Scene::getSensitivity() const {
     return sensitivity;
 }
 
@@ -200,8 +214,62 @@ bool Scene::hasVertexNormalsAttribute() const {
 
 // Clear the scene
 void Scene::clear() {
-    polygons.clear();
+    polygons->clear();
     sceneTransform = Matrix4(); // Reset to identity matrix
     boundingBox = { Vector4(DBL_MAX, DBL_MAX, DBL_MAX, 1.0), Vector4(DBL_MIN, DBL_MIN, DBL_MIN, 1.0) };
     hasVertexNormals = false;
+}
+
+
+std::size_t Scene::hashVertex(const Vertex& vertex, double accuracy) {
+    auto round = [accuracy](double coord) -> int {
+        return static_cast<int>(std::round(coord / accuracy));
+    };
+    std::size_t hx = std::hash<int>()(round(vertex.x));
+    std::size_t hy = std::hash<int>()(round(vertex.y));
+    std::size_t hz = std::hash<int>()(round(vertex.z));
+    return hx ^ (hy << 1) ^ (hz << 2); // Combine hashes
+}
+
+
+void Scene::addPolygonToConnectivity(const Vertex& vertex, Poly* polygon) {
+    std::size_t vertexHash = hashVertex(vertex);
+    vertexConnectivity[vertexHash].push_back(polygon);
+}
+
+
+const std::vector<Poly*>& Scene::getIncidentPolygons(const Vertex& vertex) const {
+    static std::vector<Poly*> empty;
+    auto it = vertexConnectivity.find(hashVertex(vertex));
+    return it != vertexConnectivity.end() ? it->second : empty;
+}
+
+// for vertices with no normal in the data file, lets compute those
+void Scene::calculateVertexNormals() {
+    for (auto it = vertexConnectivity.begin(); it != vertexConnectivity.end(); ++it) {
+        std::size_t vertexHash = it->first;
+        const std::vector<Poly*>& polygons = it->second;
+
+        Vector4 averageNormal(0.0, 0.0, 0.0, 0.0);
+
+        // Compute average normal
+        for (Poly* polygon : polygons) {
+            if (polygon->hasPolyNormalDefined()) {
+                Vector4 normal = polygon->getPolyNormal().end - polygon->getPolyNormal().start;
+                averageNormal = averageNormal + normal.normalize();
+            }
+        }
+
+        averageNormal = averageNormal.normalize()*16.0;
+
+        // Assign the computed normal
+        for (Poly* polygon : polygons) {
+            for (Vertex& vertex : polygon->getVertices()) {
+                if (hashVertex(vertex) == vertexHash && !vertex.isNormalProvidedFromFile()) {
+                    const Vector4 ns(vertex.x, vertex.y, vertex.z, 1.0); // Create ns as a Vector4
+                    vertex.setNormal(ns, ns + averageNormal,false);
+                }
+            }
+        }
+    }
 }
