@@ -11,6 +11,7 @@
 
 #include "Poly.h"
 #include "Scene.h"
+#include "Matrix4.h"
 
 #include "gl\gl.h"    // Include the standard CGWork  headers
 #include "gl\glu.h"   // Add the utility library
@@ -32,10 +33,18 @@ public:
 public:
 
 private:
+	CSliderCtrl m_finenessSlider; // Slider control for tessellation fineness
+
 	bool m_draw_poly_normals; //flag to choose whether to draw poly normals
 	bool m_draw_vertex_normals;//flag to choose whether to draw vertex normals
 	bool m_draw_bounding_box;
 	bool m_uniform_color;
+	bool m_draw_poly_normals_from ; //poly normals form file
+	bool m_draw_poly_normals_not_from ; // poly normals not from file
+	bool m_draw_vertex_normals_from ; //vertex normals from file
+	bool m_draw_vertex_normals_not_from ; // vertex normal nor from file
+
+
 	int m_nAxis;				// Axis of Action, X Y or Z
 	int m_nAction;				// Rotate, Translate, Scale
 	int m_nView;				// Orthographic, perspective
@@ -52,11 +61,12 @@ private:
 
 	LightParams m_lights[MAX_LIGHT];	//configurable lights array
 	LightParams m_ambientLight;		//ambient light (only RGB is used)
+	CPoint prev_start;
 
 
-// Overrides
-	// ClassWizard generated virtual function overrides
-	//{{AFX_VIRTUAL(CCGWorkView)
+	// Overrides
+		// ClassWizard generated virtual function overrides
+		//{{AFX_VIRTUAL(CCGWorkView)
 public:
 	virtual void OnDraw(CDC* pDC);  // overridden to draw this view
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
@@ -66,6 +76,8 @@ protected:
 // Implementation
 public:
 	virtual ~CCGWorkView();
+
+	bool m_isDragging;
 #ifdef _DEBUG
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;
@@ -77,6 +89,11 @@ protected:
 	BOOL SetupViewingOrthoConstAspect(void);
 
 	virtual void RenderScene();
+
+	// Command Handlers
+	void OnOptionsPolygonFineness();             // Opens the polygon fineness dialog
+	void OnUpdateOptionsPolygonFineness(CCmdUI* pCmdUI); // Enables the menu item
+
 
 
 	HGLRC    m_hRC;			// holds the Rendering Context
@@ -90,11 +107,33 @@ protected:
 
 	// New helper function declarations
 private:
-	void DrawPolygonEdges(CDC* pDC, const Poly& poly, double screenHeight, COLORREF color, bool flagDrawNormal);
-	void DrawPolygonNormal(CDC* pDC, const Poly& poly, double screenHeight, COLORREF color);
-	void DrawVertexNormals(CDC* pDC, const Poly& poly, double screenHeight, COLORREF color);
+	void InitializeFinenessSlider(); // Initializes the fineness slider
+	void OnFinenessSliderChanged();  // Handles fineness slider changes
+	void UpdateSceneForFineness();
+	void DrawPolygonEdgesAndVertexNormals(CDC* pDC, Poly* poly, double screenHeight, COLORREF color, COLORREF c2);
+	void DrawPolygonNormal(CDC* pDC, Poly* poly, double screenHeight, COLORREF color);
 	void DrawBoundingBox(CDC* pDC, const BoundingBox& bbox, double screenHeight, COLORREF color);
 	void DrawLineHelper(CDC* pDC, const Vector4& start, const Vector4& end, double screenHeight, COLORREF color);
+
+	Matrix4 getMatrixToCenterObject();
+
+	void ApplyXRotation(int d);
+	void ApplyYRotation(int d);
+	void ApplyZRotation(int d);
+
+	void ApplyXTranslation(int d);
+	void ApplyYTranslation(int d);
+	void ApplyZTranslation(int d);
+
+	void ApplyXScale(double d);
+	void ApplyYScale(double d);
+	void ApplyZScale(double d);
+
+
+	void ApplyTransformation(Matrix4& t);
+	void MapMouseMovement(int deg);
+	
+
 	// Generated message map functions
 protected:
 	//{{AFX_MSG(CCGWorkView)
@@ -124,6 +163,44 @@ protected:
 	afx_msg void OnLightShadingGouraud();
 	afx_msg void OnUpdateLightShadingGouraud(CCmdUI* pCmdUI);
 	afx_msg void OnLightConstants();
+
+	afx_msg void OnPerspectiveParameters();
+	afx_msg void OnOptionsMousesensitivity();
+
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+
+	afx_msg void OnBoundingBox();
+	afx_msg void OnUpdateBoundingBox(CCmdUI* pCmdUI);
+
+	afx_msg void OnVertexNormal();
+	afx_msg void OnUpdateVertexNormal(CCmdUI* pCmdUI);
+
+	afx_msg void OnPolyNormal();
+	afx_msg void OnUpdatePolyNormal(CCmdUI* pCmdUI);
+	/*
+	poly and vert from and not from
+	*/
+
+	afx_msg void OnPolyNormalsNotFrom();
+	afx_msg void OnUpdatePolyNormalsNotFrom(CCmdUI* pCmdUI);
+
+
+	afx_msg void OnPolyNormalsFrom();
+	afx_msg void OnUpdatePolyNormalsFrom(CCmdUI* pCmdUI);
+
+
+	afx_msg void OnVertexNormalsFrom();
+	afx_msg void OnUpdateVertexNormalsFrom(CCmdUI* pCmdUI);
+
+	afx_msg void OnVertexNormalsNotFrom();
+	afx_msg void OnUpdateVertexNormalsNotFrom(CCmdUI* pCmdUI);
+
+
+
+
+
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 public:

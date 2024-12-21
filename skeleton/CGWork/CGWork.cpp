@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "CGWork.h"
+#include "iritSkel.h"
 
 #include "MainFrm.h"
 #include "CGWorkDoc.h"
@@ -81,6 +82,19 @@ BOOL CCGWorkApp::InitInstance()
 	// The one and only window has been initialized, so show and update it.
 	m_pMainWnd->ShowWindow(SW_SHOW);
 	m_pMainWnd->UpdateWindow();
+
+	t_slider_value = 1;
+	r_slider_value = 1;
+	s_slider_value = 1;
+	p_slider_polyFineness_value = CGSkelFFCState.FineNess;
+
+	Object_color = RGB(255, 255, 255);
+	Background_color = RGB(0, 0, 0);
+	poly_normals_color = RGB(255, 0, 255);
+	vertex_normals_color = RGB(0, 255, 255);
+
+	d = 15;
+	fovy = 50;
 
 	return TRUE;
 }
