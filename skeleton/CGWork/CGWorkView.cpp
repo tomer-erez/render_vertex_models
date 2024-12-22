@@ -732,19 +732,23 @@ void PerspectiveParametersThread()
 	PerspectiveDlg paramDlg;
 	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
 
-	// Optionally initialize values
-	paramDlg.d = pApp->d; // Example default value
-	paramDlg.fovy = pApp->fovy; // Example default value
+	// Initialize default values
+	paramDlg.d = pApp->d;                   // Camera distance
+	paramDlg.fovy = pApp->fovy;             // Vertical field of view
+	paramDlg.aspectRatio = pApp->aspectRatio; // Aspect ratio
+	paramDlg.nearPlane = pApp->nearPlane;   // Near clipping plane
+	paramDlg.farPlane = pApp->farPlane;     // Far clipping plane
 
-	
 	if (paramDlg.DoModal() == IDOK)
 	{
 		// Retrieve updated values after the dialog is closed
 		pApp->d = paramDlg.d;
 		pApp->fovy = paramDlg.fovy;
+		pApp->aspectRatio = paramDlg.aspectRatio;
+		pApp->nearPlane = paramDlg.nearPlane;
+		pApp->farPlane = paramDlg.farPlane;
 
-		// Use the parameters (e.g., store or apply them)
-
+		// Apply the parameters if needed (e.g., to update a perspective matrix)
 	}
 }
 

@@ -21,7 +21,10 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
-	double d;
-	double fovy;
+	float d;
+	float fovy;
+	float aspectRatio;
+	float nearPlane;
+	float farPlane;
 	afx_msg void OnBnClickedDefaultsButton();
 };

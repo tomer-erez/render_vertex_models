@@ -161,16 +161,16 @@ Matrix4 Matrix4::withoutTranslation() const {
 }
 
 // Perspective projection matrix
-Matrix4 Matrix4::perspective(float fov, float aspect, float near, float far, float d) {
-    Matrix4 mat;
-    float tanHalfFOV = tan(fov / 2.0);
-    mat.m[0][0] = 1.0 / (aspect * tanHalfFOV);
-    mat.m[1][1] = 1.0 / tanHalfFOV;
-    mat.m[2][2] = -(far + near) / (far - near);
-    mat.m[2][3] = -(2.0 * far * near) / (far - near);
-    mat.m[3][2] = -1.0;
-    mat.m[3][3] = d; // Modify perspective ratio using d
-    return mat;
+Matrix4 PerspectiveMatrix(double fovy, double aspectRatio, double nearPlane, double farPlane) {
+    double f = 1.0 / tan(fovy / 2.0);
+    Matrix4 matrix;
+    matrix.m[0][0] = f / aspectRatio;
+    matrix.m[1][1] = f;
+    matrix.m[2][2] = (farPlane + nearPlane) / (nearPlane - farPlane);
+    matrix.m[2][3] = (2.0 * farPlane * nearPlane) / (nearPlane - farPlane);
+    matrix.m[3][2] = -1.0;
+    matrix.m[3][3] = 0.0;
+    return matrix;
 }
 
 // Modify perspective parameter 'd'

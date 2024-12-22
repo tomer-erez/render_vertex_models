@@ -30,7 +30,7 @@ public:
 
     // Projection matrices
     static Matrix4 orthographic(float left, float right, float bottom, float top, float near, float far);
-    static Matrix4 perspective(float fov, float aspect, float near, float far, float d);
+    static Matrix4 perspective(float fovy, float aspectRatio, float nearPlane, float farPlane, float d);
 
     // Modify perspective parameter 'd'
     void setPerspectiveD(float d);

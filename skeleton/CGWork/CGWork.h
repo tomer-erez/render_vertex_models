@@ -33,8 +33,11 @@ public:
 	COLORREF Background_color;
 	COLORREF vertex_normals_color;
 	COLORREF poly_normals_color;
-	double d;
-	double fovy;
+	float d;
+	float fovy;
+	float nearPlane;
+	float farPlane;
+	float aspectRatio;
 	CPoint start;
 	CPoint end;
 

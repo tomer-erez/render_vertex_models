@@ -94,7 +94,10 @@ BOOL CCGWorkApp::InitInstance()
 	vertex_normals_color = RGB(0, 255, 255);
 
 	d = 15;
-	fovy = 50;
+	fovy = 45;
+	aspectRatio=16.0/9.0;
+	nearPlane = 0.1;
+	farPlane=1000.0;
 
 	return TRUE;
 }
