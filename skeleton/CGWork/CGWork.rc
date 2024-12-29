@@ -81,6 +81,9 @@ BEGIN
         MENUITEM "&Orthographic",               ID_VIEW_ORTHOGRAPHIC
         MENUITEM "&Perspective",                ID_VIEW_PERSPECTIVE
         MENUITEM SEPARATOR
+        MENUITEM "view space transformation",   ID_VIEW_VIEW
+        MENUITEM "object space transofrmation", ID_VIEW_OBJECT
+        MENUITEM SEPARATOR
         MENUITEM "Bounding Box",                ID_VIEW_BOUNDINGBOX
         MENUITEM SEPARATOR
         MENUITEM "Polygon Normals from *itd file", ID_VIEW_POLYGONNORMALSFROM

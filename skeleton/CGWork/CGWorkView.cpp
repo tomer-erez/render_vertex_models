@@ -113,6 +113,11 @@ BEGIN_MESSAGE_MAP(CCGWorkView, CView)
 	ON_COMMAND(ID_VIEW_VERTEXNORMALSNOTFROM, OnVertexNormalsNotFrom)
 	ON_UPDATE_COMMAND_UI(ID_VIEW_VERTEXNORMALSNOTFROM, OnUpdateVertexNormalsNotFrom)
 
+	ON_COMMAND(ID_VIEW_VIEW, &CCGWorkView::OnViewView)
+	ON_COMMAND(ID_VIEW_OBJECT, &CCGWorkView::OnViewObject)
+
+	ON_UPDATE_COMMAND_UI(ID_VIEW_VIEW, &CCGWorkView::OnUpdateViewView)
+	ON_UPDATE_COMMAND_UI(ID_VIEW_OBJECT, &CCGWorkView::OnUpdateViewObject)
 
 
 
@@ -146,7 +151,7 @@ CCGWorkView::CCGWorkView()
 	m_draw_poly_normals_not_from = false; // poly normals not from file
 	m_draw_vertex_normals_from = false; //vertex normals from file
 	m_draw_vertex_normals_not_from = false; // vertex normal nor from file
-
+	m_is_object_space_transform = 1;//default to transform relative to object center and not to 0,0
 	// Set default values
 	m_nAxis = ID_AXIS_X;
 	m_nAction = ID_ACTION_ROTATE;
@@ -973,13 +978,15 @@ void CCGWorkView::ApplyXRotation(int d) {
 	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
 
 	// Create the rotation matrix
-	Matrix4 rotation = Matrix4::rotateX(d);
+	Matrix4 r = Matrix4::rotateX(d);
 
+	if (m_is_object_space_transform) {
+		 r = CreateCenteredRotationMatrix(r);
+	}
 	// Create the centered rotation matrix
-	Matrix4 centeredRotation = CreateCenteredRotationMatrix(rotation);
 
 	// Apply the transformation
-	ApplyTransformation(centeredRotation);
+	ApplyTransformation(r);
 
 	// Update the status bar
 	CString str;
@@ -992,13 +999,15 @@ void CCGWorkView::ApplyYRotation(int d) {
 	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
 
 	// Create the rotation matrix
-	Matrix4 rotation = Matrix4::rotateY(d);
+	Matrix4 r = Matrix4::rotateY(d);
 
+	if (m_is_object_space_transform) {
+		r = CreateCenteredRotationMatrix(r);
+	}
 	// Create the centered rotation matrix
-	Matrix4 centeredRotation = CreateCenteredRotationMatrix(rotation);
 
 	// Apply the transformation
-	ApplyTransformation(centeredRotation);
+	ApplyTransformation(r);
 
 	// Update the status bar
 	CString str;
@@ -1011,13 +1020,14 @@ void CCGWorkView::ApplyZRotation(int d) {
 	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
 
 	// Create the rotation matrix
-	const Matrix4 rotation = Matrix4::rotateZ(d);
+	Matrix4 r = Matrix4::rotateZ(d);
 
 	// Create the centered rotation matrix
-	Matrix4 centeredRotation = CreateCenteredRotationMatrix(rotation);
-
+	if (m_is_object_space_transform) {
+		r = CreateCenteredRotationMatrix(r);
+	}
 	// Apply the transformation
-	ApplyTransformation(centeredRotation);
+	ApplyTransformation(r);
 
 	// Update the status bar
 	CString str;
@@ -1166,11 +1176,35 @@ void CCGWorkView::MapMouseMovement(int deg) {
 		// Invalid axis, do nothing
 		break;
 	}
+
+}
+void CheckMenuItem(UINT menuID, bool checked) {
+	CMenu* pMenu = AfxGetMainWnd()->GetMenu(); // Get the main menu
+	if (pMenu) {
+		pMenu->CheckMenuItem(menuID, checked ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
+	}
 }
 
 
+void CCGWorkView::OnUpdateViewView(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_is_object_space_transform == 0);
+}
 
+void CCGWorkView::OnUpdateViewObject(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_is_object_space_transform == 1);
+}
 
+void CCGWorkView::OnViewView() {
+	m_is_object_space_transform = 0; // Set flag to View
+	CheckMenuItem(ID_VIEW_VIEW, true);
+	CheckMenuItem(ID_VIEW_OBJECT, false);
+}
+
+void CCGWorkView::OnViewObject() {
+	m_is_object_space_transform = 1; // Set flag to World
+	CheckMenuItem(ID_VIEW_VIEW, false);
+	CheckMenuItem(ID_VIEW_OBJECT, true);
+}
 
 
 

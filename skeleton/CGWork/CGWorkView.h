@@ -53,6 +53,8 @@ private:
 	CString m_strItdFileName;		// file name of IRIT data
 
 	int m_nLightShading;			// shading: Flat, Gouraud.
+		
+	int m_is_object_space_transform; // is object or view space transform
 
 	double m_lMaterialAmbient;		// The Ambient in the scene
 	double m_lMaterialDiffuse;		// The Diffuse in the scene
@@ -198,6 +200,11 @@ protected:
 	afx_msg void OnUpdateVertexNormalsNotFrom(CCmdUI* pCmdUI);
 
 
+	afx_msg void OnViewObject();
+	afx_msg void OnViewView();
+
+	afx_msg void OnUpdateViewObject(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateViewView(CCmdUI* pCmdUI);
 
 
 

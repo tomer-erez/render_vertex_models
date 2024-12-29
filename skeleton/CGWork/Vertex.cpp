@@ -77,6 +77,9 @@ void Vertex::applyTransform(const Matrix4& transform, const Matrix4& normalTrans
     const Vector4 transformedStart = transform.transform(normalCalculated.start);
     normalCalculated = Normal(transformedStart, transformedStart + transformedDirection);
 
+    ////////////////////////////////////////////////////////////////////////////////////////////
+    
+
     // Transform the normal from file if it exists
     const Vector4 fileDirection = normalFromFile.end - normalFromFile.start;
     const Vector4 transformedFileDirection = normalTransform.transform(fileDirection).normalize() * F;

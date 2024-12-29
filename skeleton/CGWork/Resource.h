@@ -7,6 +7,9 @@
 #define IDR_CGWorkTYPE                  129
 #define IDD_LIGHTS_DLG                  134
 #define IDD_MATERIAL_DLG                136
+#define IDD_PERSPECTIVE                 139
+#define IDD_MOUSE                       141
+#define IDD_FINENESS_CONTROL            145
 #define IDC_LIGHT_SPACE                 1010
 #define IDC_RADIO_LIGHT1                1017
 #define IDC_RADIO_LIGHT2                1018
@@ -32,8 +35,20 @@
 #define IDC_LIGHT_TYPE                  1038
 #define IDC_MATERIAL_AMBIENT            1039
 #define IDC_MATERIAL_DIFFUSE            1040
+#define IDC_PERSPECTIVEDEFAULTS         1040
 #define IDC_MATERIAL_SHININESS          1041
 #define IDC_MATERIAL_SPECULAR           1042
+#define IDC_MOUSEDEFAULTS               1043
+#define IDC_SLIDER1                     1044
+#define IDC_EDIT1                       1045
+#define IDC_SLIDER2                     1045
+#define IDC_SLIDER_FINENESS             1045
+#define IDC_EDIT2                       1046
+#define IDC_SLIDER3                     1046
+#define IDC_EDIT6                       1047
+#define IDC_EDIT3                       2042
+#define IDC_EDIT4                       3042
+#define IDC_EDIT5                       4042
 #define ID_FILE_LOAD                    32771
 #define ID_VIEW_ORTHOGRAPHIC            32772
 #define ID_VIEW_PERSPECTIVE             32773
@@ -52,14 +67,32 @@
 #define ID_BUTTON_SUBDIVIDE             32797
 #define ID_OPTIONS_PERSPECTIVECONTROL   32798
 #define ID_OPTIONS_MOUSESENSITIVITY     32799
+#define ID_OPTIONS_OBJECTCOLOR          32801
+#define ID_OPTIONS_BACKGROUNDCOLOR      32802
+#define ID_VIEW_BOUNDINGBOX             32803
+#define ID_VIEW_VERTEXNORMAL            32804
+#define ID_VIEW_POLYGONNORMALS          32805
+#define ID_OPTIONS_POLYGONTESSELLATIONTOLERANCE 32806
+#define ID_OPTIONS_POLYGONFINENESS      32807
+#define ID_VIEW_POLYGONNORMALSFROM      32808
+#define ID_VIEW_POLYGONNORMALSNOTFROM   32809
+#define ID_VIEW_VERTEXNORMALSFROM       32810
+#define ID_VIEW_VERTEXNORMALSNOTFROM    32811
+#define ID_OPTIONS_VERTEXNORMALSCOLOR   32812
+#define ID_OPTIONS_POLYGONNORMALSCOLOR  32813
+#define ID_VIEW_WORLD                   32814
+#define ID_VIEW_VIEWSPACETRANSFORMATION 32815
+#define ID_VIEW_S                       32816
+#define ID_VIEW_VIEW                    32817
+#define ID_VIEW_OBJECT                  32818
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        139
-#define _APS_NEXT_COMMAND_VALUE         32801
-#define _APS_NEXT_CONTROL_VALUE         1040
+#define _APS_NEXT_RESOURCE_VALUE        147
+#define _APS_NEXT_COMMAND_VALUE         32819
+#define _APS_NEXT_CONTROL_VALUE         1047
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

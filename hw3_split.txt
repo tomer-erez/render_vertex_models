@@ -9,12 +9,12 @@ todo
 -tessellation bug: Matan 
 slider resets on new scene, change it
 
--normal calculate for all vertices: Tomer
+-normal calculate for all vertices: Tomer VVV
 update the datastructure to have normalFromFIle, and normalCalculated
 in the store data function, compute normals for all vertices, and all polygons
-later in the onDraw, address the flags and draw the right onesa.
+later in the onDraw, address the flags and draw the right onesa. 
 
-polygon normals: Tomer
+polygon normals: Tomer VVV
 same as the last point.
 
 
