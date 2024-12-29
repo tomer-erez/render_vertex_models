@@ -8,6 +8,18 @@ Poly::Poly()
     polyNormalFromFile(Normal()),
     polyNormalCalculated(Normal()) {}
 
+
+void Poly::flipNormals() {
+    // Flip vertex normals
+    for (auto& vertex : vertices) {
+        vertex.flipNormals();
+    }
+
+    // Flip polygon normals
+    polyNormalFromFile.flip();
+    polyNormalCalculated.flip();
+}
+
 void Poly::addVertex(const Vertex& vertex) {
     vertices.push_back(vertex);
 }

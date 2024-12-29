@@ -119,7 +119,11 @@ BEGIN_MESSAGE_MAP(CCGWorkView, CView)
 	ON_UPDATE_COMMAND_UI(ID_VIEW_VIEW, &CCGWorkView::OnUpdateViewView)
 	ON_UPDATE_COMMAND_UI(ID_VIEW_OBJECT, &CCGWorkView::OnUpdateViewObject)
 
-
+	ON_COMMAND(ID_VIEW_DRAW_SILS, &CCGWorkView::OnDrawSilhouettes)
+	ON_UPDATE_COMMAND_UI(ID_VIEW_DRAW_SILS, &CCGWorkView::OnUpdateDrawSilhouettes)
+	
+	ON_COMMAND(ID_DRAWS_FLIP_NORMALS, &CCGWorkView::OnFlipNormals)
+	ON_UPDATE_COMMAND_UI(ID_DRAWS_FLIP_NORMALS, &CCGWorkView::OnUpdateFlipNormals)
 
 	ON_WM_LBUTTONDOWN()
 	ON_WM_MOUSEMOVE()
@@ -152,6 +156,7 @@ CCGWorkView::CCGWorkView()
 	m_draw_vertex_normals_from = false; //vertex normals from file
 	m_draw_vertex_normals_not_from = false; // vertex normal nor from file
 	m_is_object_space_transform = 1;//default to transform relative to object center and not to 0,0
+	m_flip_normals = 0;
 	// Set default values
 	m_nAxis = ID_AXIS_X;
 	m_nAction = ID_ACTION_ROTATE;
@@ -1204,6 +1209,25 @@ void CCGWorkView::OnViewObject() {
 	m_is_object_space_transform = 1; // Set flag to World
 	CheckMenuItem(ID_VIEW_VIEW, false);
 	CheckMenuItem(ID_VIEW_OBJECT, true);
+}
+
+
+void CCGWorkView::OnDrawSilhouettes() {
+	m_draw_silhouettes = 1 - m_draw_silhouettes; // Set flag to View
+	CheckMenuItem(ID_VIEW_DRAW_SILS, true);
+}
+void CCGWorkView::OnUpdateDrawSilhouettes(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_draw_silhouettes == 1);
+}
+
+void CCGWorkView::OnFlipNormals() {
+	m_flip_normals = 1 - m_flip_normals;
+	scene.flipNormals();
+
+}
+void CCGWorkView::OnUpdateFlipNormals(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_flip_normals == 1);
+
 }
 
 

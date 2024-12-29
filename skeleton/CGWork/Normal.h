@@ -19,6 +19,7 @@ public:
     // Check if the normal is back-facing with respect to a given view direction
     bool isBackFacing(const Vector4& viewDirection) const;
     void transform(const Matrix4& transform, const Matrix4& normalTransform);
+    void flip();
 private:
     // Helper function to apply a transformation matrix to a Vector4
     Vector4 applyTransformation(const Matrix4& matrix, const Vector4& vec) const;

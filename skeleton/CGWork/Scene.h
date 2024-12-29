@@ -8,6 +8,7 @@
 #include "Matrix4.h"
 #include "Vector4.h"
 #include <Windows.h>
+#include "Edge.h"
 
 struct BoundingBox {
     Vector4 TLF; // Top-Left-Forward corner of the bounding box
@@ -39,6 +40,8 @@ struct BoundingBox {
 
 class Scene {
 private:
+    std::unordered_map<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>, Edge*, Edge::Hash> edges;
+
     std::vector<Poly*>* polygons;   // List of polygons in the scene
     Matrix4 sceneTransform;       // Transformation matrix for the entire scene
     BoundingBox boundingBox;      // Scene bounding box
@@ -61,6 +64,8 @@ private:
     Vector4 objectCenter; //center of the object , will keep it to rotate and scale around it!
 
 public:
+    void addEdge(Poly* poly, const std::shared_ptr<Vertex>& v1, const std::shared_ptr<Vertex>& v2);
+    const std::unordered_map<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>, Edge*, Edge::Hash>& getEdges() const;
 
     void updateObjectCenter();
 
@@ -68,6 +73,7 @@ public:
 
     Scene();
 
+    void flipNormals();
 
     bool hasBoundingBox;
 

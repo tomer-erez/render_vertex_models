@@ -31,7 +31,7 @@ public:
     void setNormalFromFile(const Normal& normal);
     void setNormalCalculated(const Normal& normal);
     void setNormalProvidedFromFile(bool provided);
-    
+    void flipNormals();
     void applyTransform(const Matrix4& transform, const Matrix4& normalTransform);
 
     // Convenience methods

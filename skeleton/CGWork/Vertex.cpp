@@ -26,6 +26,10 @@ Vertex& Vertex::operator=(const Vector4& v) {
     return *this;
 }
 
+void Vertex::flipNormals() {
+    normalFromFile.flip(); // Flip the normal from file
+    normalCalculated.flip();   // Flip the calculated normal
+}
 // Getters
 const Normal& Vertex::getNormalFromFile() const {
     return normalFromFile;

@@ -189,7 +189,7 @@ bool CGSkelStoreData(IPObjectStruct* PObj) {//we are calling this func once per 
 
 		PVertex = PPolygon->PVertex;
 
-		// Iterate over the vertices of the polygon
+
 
 		do {
 
