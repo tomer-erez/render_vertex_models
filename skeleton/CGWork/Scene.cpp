@@ -5,11 +5,13 @@
 
 // Constructor
 Scene::Scene()
-    : sceneTransform(Matrix4()),
+    : sceneTransform(Matrix4()), //we are not using
     boundingBox{ Vector4(DBL_MAX, DBL_MAX, DBL_MAX, 1.0), Vector4(DBL_MIN, DBL_MIN, DBL_MIN, 1.0) },
+
     wireframeColor(RGB(255, 255, 255)),  // Default white
     normalColor(RGB(0, 255, 0)),        // Default green
     backgroundColor(RGB(0, 0, 0)),      // Default black
+
     sensitivity(1.0),                   // Default sensitivity
     showNormals(false),                 // Default: don't show normals
     hasVertexNormals(false),            // Default: no vertex normals
@@ -17,6 +19,7 @@ Scene::Scene()
     hasBoundingBox(false),
     showBoundingBox(false){
     polygons = new std::vector<Poly*>;
+    //edges : {{poly1,poly2}}
 
 }           // Default: don't show bounding box
 
@@ -37,46 +40,18 @@ size_t Scene::getPolygonCount() const {
 }
 
 //applying a transformation to the whole scene
-// Applying a transformation to the whole scene
 void Scene::applyTransform(const Matrix4& transform) {
-
     Matrix4 normalTransform = transform.inverse().transpose(); // Inverse-transpose for transforming normals
 
     // Apply transformation to all polygons in the scene
     for (Poly* poly : *polygons) {
-        // Apply the full transformation to all vertices
-        for (Vertex& vertex : poly->getVertices()) {
-            // Transform vertex position
-            vertex = transform.transform(vertex);
-
-            // Transform normals if the vertex has a normal
-            if (vertex.getHasNormal()) {
-                const Vector4 direction = vertex.getNormalEnd() - vertex.getNormalStart();
-                const Vector4 transformedDirection = normalTransform.transform(direction).normalize() * 16.0;
-                const Vector4 transformedStart = transform.transform(vertex.getNormalStart());
-                vertex.setNormal(transformedStart, transformedStart + transformedDirection, vertex.isNormalProvidedFromFile());                // Keep the flag indicating whether the normal came from the file
-            }
-        }
-
-        // Apply the transformation to polygon normals if they exist
-        if (poly->hasPolyNormalDefined()) {
-            Vector4 direction = poly->getPolyNormal().end - poly->getPolyNormal().start;
-            Vector4 transformedDirection = normalTransform.transform(direction).normalize() * 16.0;
-
-            Vector4 transformedStart = transform.transform(poly->getPolyNormal().start);
-            const bool originalFlag = poly->getPolyNormal().wasProvidedFromFile;
-
-            // Correctly instantiate the PolyNormal object
-            PolyNormal transformedPolyNormal(transformedStart, transformedStart + transformedDirection, originalFlag);
-            poly->setPolyNormal(transformedPolyNormal);
-        }
+        poly->applyTransform(transform, normalTransform); // Delegate transformation to Poly
     }
 
     // Apply the transformation to the bounding box
     boundingBox.applyTransform(transform);
 
     updateObjectCenter();
-
 }
 
 // Calculate the bounding box of the scene
@@ -244,7 +219,8 @@ const std::vector<Poly*>& Scene::getIncidentPolygons(const Vertex& vertex) const
     return it != vertexConnectivity.end() ? it->second : empty;
 }
 
-// for vertices with no normal in the data file, lets compute those
+
+// For vertices with no normal in the data file, calculate them
 void Scene::calculateVertexNormals() {
     for (auto it = vertexConnectivity.begin(); it != vertexConnectivity.end(); ++it) {
         std::size_t vertexHash = it->first;
@@ -252,22 +228,20 @@ void Scene::calculateVertexNormals() {
 
         Vector4 averageNormal(0.0, 0.0, 0.0, 0.0);
 
-        // Compute average normal
+        // Compute the average normal for the vertex
         for (Poly* polygon : polygons) {
-            if (polygon->hasPolyNormalDefined()) {
-                Vector4 normal = polygon->getPolyNormal().end - polygon->getPolyNormal().start;
+                Vector4 normal = polygon->getPolyNormalCalculated().end - polygon->getPolyNormalCalculated().start;
                 averageNormal = averageNormal + normal.normalize();
-            }
         }
 
-        averageNormal = averageNormal.normalize()*16.0;
+        averageNormal = averageNormal.normalize() * 16.0; // Scale the normal
 
-        // Assign the computed normal
+        // Assign the computed normal to the vertex
         for (Poly* polygon : polygons) {
             for (Vertex& vertex : polygon->getVertices()) {
                 if (hashVertex(vertex) == vertexHash && !vertex.isNormalProvidedFromFile()) {
-                    const Vector4 ns(vertex.x, vertex.y, vertex.z, 1.0); // Create ns as a Vector4
-                    vertex.setNormal(ns, ns + averageNormal,false);
+                    const Vector4 normalStart(vertex.x, vertex.y, vertex.z, 1.0); // Normal starts at vertex position
+                    vertex.setNormalCalculated(Normal(normalStart, normalStart + averageNormal)); // Set the calculated normal
                 }
             }
         }

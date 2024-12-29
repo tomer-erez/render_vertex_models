@@ -1,83 +1,87 @@
 #include "Vertex.h"
+const double F = 16.0;
+
 
 // Default constructor
-Vertex::Vertex()
-    : Vector4(), normalStart(Vector4()), normalEnd(Vector4()), hasNormal(false), normalProvidedFromFile(false) {}
+Vertex::Vertex() : Vector4(), normalFromFile(Normal()), normalCalculated(Normal()), hasNormal(false), normalProvidedFromFile(false) {}
 
 // Constructor with position (4 arguments)
 Vertex::Vertex(float x, float y, float z, float w)
-    : Vector4(x, y, z, w), normalStart(Vector4()), normalEnd(Vector4()), hasNormal(false), normalProvidedFromFile(false) {}
+    : Vector4(x, y, z, w), normalFromFile(Normal()), normalCalculated(Normal()), hasNormal(false), normalProvidedFromFile(false) {}
 
 // Constructor with position (3 arguments, defaults w to 1.0f)
 Vertex::Vertex(float x, float y, float z)
-    : Vector4(x, y, z, 1.0f), normalStart(Vector4()), normalEnd(Vector4()), hasNormal(false), normalProvidedFromFile(false) {}
+    : Vector4(x, y, z, 1.0f), normalFromFile(Normal()), normalCalculated(Normal()), hasNormal(false), normalProvidedFromFile(false) {}
 
 // Constructor with normal and flag
-Vertex::Vertex(const Vector4& position, const Vector4& normalStart, const Vector4& normalEnd, bool normalProvidedFromFile)
-    : Vector4(position), normalStart(normalStart), normalEnd(normalEnd), hasNormal(true), normalProvidedFromFile(normalProvidedFromFile) {}
+Vertex::Vertex(const Vector4& position, const Normal& normalFromFile, bool normalProvidedFromFile)
+    : Vector4(position), normalFromFile(normalFromFile), normalCalculated(Normal()), hasNormal(true), normalProvidedFromFile(normalProvidedFromFile) {}
 
-
-// Getter for normalProvidedFromFile
-bool Vertex::isNormalProvidedFromFile() const {
-    return normalProvidedFromFile;
-}
-
-// Setter for normalProvidedFromFile
-void Vertex::setNormalProvidedFromFile(bool provided) {
-    normalProvidedFromFile = provided;
-    hasNormal = true;
-}
-
-
+// Assignment operator from Vector4
 Vertex& Vertex::operator=(const Vector4& v) {
-    // Assign Vector4 components (position)
     x = v.x;
     y = v.y;
     z = v.z;
     w = v.w;
-
-    // Keep existing normal values unchanged
     return *this;
 }
 
-
-// Getter for normal start
-const Vector4& Vertex::getNormalStart() const {
-    return normalStart;
+// Getters
+const Normal& Vertex::getNormalFromFile() const {
+    return normalFromFile;
 }
 
-// Getter for normal end
-const Vector4& Vertex::getNormalEnd() const {
-    return normalEnd;
+const Normal& Vertex::getNormalCalculated() const {
+    return normalCalculated;
 }
 
 bool Vertex::getHasNormal() const {
     return hasNormal;
 }
 
-// Setter for normal start
-void Vertex::setNormalStart(const Vector4& start) {
-    normalStart = start;
+bool Vertex::isNormalProvidedFromFile() const {
+    return normalProvidedFromFile;
 }
 
-// Setter for normal end
-void Vertex::setNormalEnd(const Vector4& end) {
-    normalEnd = end;
-}
-
-// Setter for normal start and end
-void Vertex::setNormal(const Vector4& start, const Vector4& end, const bool fromFile) {
-    normalStart = start;
-    normalEnd = end;
+// Setters
+void Vertex::setNormalFromFile(const Normal& normal) {
+    normalFromFile = normal;
     hasNormal = true;
-    normalProvidedFromFile = fromFile;
+}
 
+void Vertex::setNormalCalculated(const Normal& normal) {
+    normalCalculated = normal;
+    hasNormal = true;
+}
+
+void Vertex::setNormalProvidedFromFile(bool provided) {
+    normalProvidedFromFile = provided;
 }
 
 // Update the normal direction relative to the vertex position
 void Vertex::updateNormalDirection(const Vector4& direction) {
-    normalStart = *this; // The vertex position
-    normalEnd = *this + direction.normalize();
+    normalCalculated = Normal(*this, *this + direction.normalize());
     hasNormal = true;
+}
 
+
+void Vertex::applyTransform(const Matrix4& transform, const Matrix4& normalTransform) {
+    // Transform the vertex position
+    *this = transform.transform(*this);
+
+    // Transform normals if the vertex has a normal
+    const Vector4 direction = normalCalculated.end - normalCalculated.start;
+    const Vector4 transformedDirection = normalTransform.transform(direction).normalize() * F;
+
+    // Transform the start and end points of the normal
+    const Vector4 transformedStart = transform.transform(normalCalculated.start);
+    normalCalculated = Normal(transformedStart, transformedStart + transformedDirection);
+
+    // Transform the normal from file if it exists
+    const Vector4 fileDirection = normalFromFile.end - normalFromFile.start;
+    const Vector4 transformedFileDirection = normalTransform.transform(fileDirection).normalize() * F;
+
+    const Vector4 transformedFileStart = transform.transform(normalFromFile.start);
+    normalFromFile = Normal(transformedFileStart, transformedFileStart + transformedFileDirection);
+    
 }

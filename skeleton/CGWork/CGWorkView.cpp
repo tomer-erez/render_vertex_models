@@ -322,6 +322,7 @@ void CCGWorkView::DrawLineHelper(CDC* pDC, const Vector4& start, const Vector4& 
 */
 
 
+
 void CCGWorkView::DrawPolygonEdgesAndVertexNormals(CDC* pDC, Poly* poly, double screenHeight, COLORREF color, COLORREF c2) {
 	const std::vector<Vertex>& vertices = poly->getVertices();
 	const size_t vertexCount = vertices.size();
@@ -333,57 +334,53 @@ void CCGWorkView::DrawPolygonEdgesAndVertexNormals(CDC* pDC, Poly* poly, double 
 		// Draw polygon edge
 		DrawLineHelper(pDC, start, end, screenHeight, color);
 
-		// Draw vertex normals based on global flags
-		if (start.getHasNormal()) {
-			if (m_draw_vertex_normals_from && start.isNormalProvidedFromFile()) {
-				// Draw normals provided from file
-				DrawLineHelper(pDC, start.getNormalStart(), start.getNormalEnd(), screenHeight, c2); 
-			}
-			if (m_draw_vertex_normals_not_from && !start.isNormalProvidedFromFile()) {
-				// Draw calculated normals
-				DrawLineHelper(pDC, start.getNormalStart(), start.getNormalEnd(), screenHeight, c2);
-			}
+		// Draw vertex normals from file
+		if (m_draw_vertex_normals_from ) {
+			// Draw normals provided from file
+			const Normal& normalFromFile = start.getNormalFromFile();
+			DrawLineHelper(pDC, normalFromFile.start, normalFromFile.end, screenHeight, c2);
 		}
+		//draw vertex normals calculated
+		if (m_draw_vertex_normals_not_from) {
+			// Draw calculated normals
+			const Normal& normalCalculated = start.getNormalCalculated();
+			DrawLineHelper(pDC, normalCalculated.start, normalCalculated.end, screenHeight, c2);
+		}
+		
 	}
 }
+
+
 
 
 
 void CCGWorkView::DrawPolygonNormal(CDC* pDC, Poly* poly, double screenHeight, COLORREF color) {
-	if (!poly->hasPolyNormalDefined()) return;
-
-	const PolyNormal& polyNormal = poly->getPolyNormal();
-
-	// Draw polygon normals based on global flags
-	if (m_draw_poly_normals_from && polyNormal.wasProvidedFromFile) {
-		// Draw normals provided from file
-		DrawLineHelper(pDC, polyNormal.start, polyNormal.end, screenHeight, color); // Blue
+	// Draw polygon normals from file
+	if (m_draw_poly_normals_from) {
+		const Normal& normalFromFile = poly->getPolyNormalFromFile();
+		DrawLineHelper(pDC, normalFromFile.start, normalFromFile.end, screenHeight, color); // Blue
 	}
-	if (m_draw_poly_normals_not_from && !polyNormal.wasProvidedFromFile) {
-		// Draw calculated normals
-		DrawLineHelper(pDC, polyNormal.start, polyNormal.end, screenHeight, color); // Orange
+
+	// Draw calculated polygon normals
+	if (m_draw_poly_normals_not_from) {
+		const Normal& normalCalculated = poly->getPolyNormalCalculated();
+		DrawLineHelper(pDC, normalCalculated.start, normalCalculated.end, screenHeight, color); // Orange
 	}
 }
 
-
-
 void CCGWorkView::DrawBoundingBox(CDC* pDC, const BoundingBox& bbox, double screenHeight, COLORREF color) {
-	// Get the 8 corners of the bounding box
 	std::vector<Vector4> corners = bbox.getCorners();
 
-	// Define the 12 edges of the bounding box
 	std::vector<std::pair<int, int>> edges = {
 		{0, 1}, {1, 3}, {3, 2}, {2, 0}, // Top face
 		{4, 5}, {5, 7}, {7, 6}, {6, 4}, // Bottom face
 		{0, 4}, {1, 5}, {2, 6}, {3, 7}  // Vertical edges
 	};
 
-	// Draw each edge using the helper function
 	for (const auto& edge : edges) {
 		DrawLineHelper(pDC, corners[edge.first], corners[edge.second], screenHeight, color);
 	}
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 // CCGWorkView drawing
