@@ -1,16 +1,16 @@
 #include "Poly.h"
-#include <iostream>
+#include <cfloat>
 
 Poly::Poly()
-    : hasPolyNormal(false),
+    : hasPolyNormalFromFile(false),
+    hasPolyNormalCalculated(false),
     color(RGB(255, 255, 255)),
-    polyNormal(PolyNormal()) {} // Correct syntax with parentheses
+    polyNormalFromFile(Normal()),
+    polyNormalCalculated(Normal()) {}
 
 void Poly::addVertex(const Vertex& vertex) {
     vertices.push_back(vertex);
 }
-
-
 
 std::vector<Vertex>& Poly::getVertices() {
     return vertices;
@@ -20,29 +20,36 @@ const std::vector<Vertex>& Poly::getVertices() const {
     return vertices;
 }
 
-
-
-
-
-const PolyNormal& Poly::getPolyNormal() const {
-    return polyNormal;
+const Normal& Poly::getPolyNormalFromFile() const {
+    return polyNormalFromFile;
 }
 
-void Poly::setPolyNormal(const PolyNormal& normal) {
-    polyNormal = normal;
-    hasPolyNormal = true;
+const Normal& Poly::getPolyNormalCalculated() const {
+    return polyNormalCalculated;
+}
+
+void Poly::setPolyNormalFromFile(const Normal& normal) {
+    polyNormalFromFile = normal;
+    hasPolyNormalFromFile = true;
+}
+
+void Poly::setPolyNormalCalculated(const Normal& normal) {
+    polyNormalCalculated = normal;
+    hasPolyNormalCalculated = true;
 }
 
 void Poly::calculatePolyNormal(const Vector4& centroid, const Vector4& direction) {
-    polyNormal = PolyNormal(centroid, centroid + direction.normalize());
-    hasPolyNormal = true;
+    polyNormalCalculated = Normal(centroid, centroid + direction.normalize());
+    hasPolyNormalCalculated = true;
 }
 
-bool Poly::hasPolyNormalDefined() const {
-    return hasPolyNormal;
+bool Poly::hasPolyNormalFromFileDefined() const {
+    return hasPolyNormalFromFile;
 }
 
-
+bool Poly::hasPolyNormalCalculatedDefined() const {
+    return hasPolyNormalCalculated;
+}
 
 size_t Poly::getVertexCount() const {
     return vertices.size();
@@ -56,7 +63,6 @@ COLORREF Poly::getColor() const {
     return color;
 }
 
-
 void Poly::calculateBoundingBox(Vector4& min, Vector4& max) const {
     min = Vector4(FLT_MAX, FLT_MAX, FLT_MAX, 1.0);
     max = Vector4(FLT_MIN, FLT_MIN, FLT_MIN, 1.0);
@@ -64,5 +70,25 @@ void Poly::calculateBoundingBox(Vector4& min, Vector4& max) const {
     for (const Vertex& vertex : vertices) {
         min.updateMin(vertex);
         max.updateMax(vertex);
+    }
+}
+
+#include "Poly.h"
+
+// Apply a transformation to the polygon, including vertices and normals
+void Poly::applyTransform(const Matrix4& transform, const Matrix4& normalTransform) {
+    // Transform all vertices
+    for (Vertex& vertex : vertices) {
+        vertex.applyTransform(transform, normalTransform);
+    }
+
+    // Transform polygon normal from file
+    if (hasPolyNormalFromFile) {
+        polyNormalFromFile.transform(transform, normalTransform);
+    }
+
+    // Transform polygon calculated normal
+    if (hasPolyNormalCalculated) {
+        polyNormalCalculated.transform(transform, normalTransform);
     }
 }
