@@ -23,6 +23,22 @@ Scene::Scene()
 
 }           // Default: don't show bounding box
 
+void Scene::addEdge(Poly* poly, const std::shared_ptr<Vertex>& v1, const std::shared_ptr<Vertex>& v2) {
+    auto edgeKey = std::make_pair(v1, v2);
+    if (edges.find(edgeKey) == edges.end()) {
+        // Create a new edge
+        edges[edgeKey] = new Edge(poly, nullptr, v1, v2);
+    }
+    else {
+        // Update the existing edge
+        edges[edgeKey]->setPoly2(poly);
+    }
+}
+
+const std::unordered_map<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>, Edge*, Edge::Hash>& Scene::getEdges() const {
+    return edges;
+}
+
 // Add a polygon to the scene
 void Scene::addPolygon(Poly* poly) {
     polygons->push_back(poly);
@@ -245,5 +261,12 @@ void Scene::calculateVertexNormals() {
                 }
             }
         }
+    }
+}
+
+
+void Scene::flipNormals() {
+    for (Poly* poly : *polygons) {//loop over polys
+        poly->flipNormals(); // Delegate transformation to Poly
     }
 }

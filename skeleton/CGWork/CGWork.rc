@@ -83,14 +83,6 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "view space transformation",   ID_VIEW_VIEW
         MENUITEM "object space transofrmation", ID_VIEW_OBJECT
-        MENUITEM SEPARATOR
-        MENUITEM "Bounding Box",                ID_VIEW_BOUNDINGBOX
-        MENUITEM SEPARATOR
-        MENUITEM "Polygon Normals from *itd file", ID_VIEW_POLYGONNORMALSFROM
-        MENUITEM "Polygon Normals NOT from *itd file", ID_VIEW_POLYGONNORMALSNOTFROM
-        MENUITEM SEPARATOR
-        MENUITEM "Vertex Normals from *itd file", ID_VIEW_VERTEXNORMALSFROM
-        MENUITEM "Vertex Normals NOT from *itd file", ID_VIEW_VERTEXNORMALSNOTFROM
     END
     POPUP "A&ction"
     BEGIN
@@ -126,6 +118,17 @@ BEGIN
     POPUP "&Help"
     BEGIN
         MENUITEM "&About CGWork...",            ID_APP_ABOUT
+    END
+    POPUP "draws"
+    BEGIN
+        MENUITEM "Bounding Box",                ID_VIEW_BOUNDINGBOX
+        MENUITEM "draw sillouets",              ID_VIEW_DRAW_SILS
+        MENUITEM SEPARATOR
+        MENUITEM "Vertex Normals from *itd file", ID_VIEW_VERTEXNORMALSFROM
+        MENUITEM "Vertex Normals NOT from *itd file", ID_VIEW_VERTEXNORMALSNOTFROM
+        MENUITEM "Polygon Normals from *itd file", ID_VIEW_POLYGONNORMALSFROM
+        MENUITEM "Polygon Normals NOT from *itd file", ID_VIEW_POLYGONNORMALSNOTFROM
+        MENUITEM "flip normals",                ID_DRAWS_FLIP_NORMALS
     END
 END
 

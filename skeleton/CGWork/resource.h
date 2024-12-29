@@ -85,13 +85,20 @@
 #define ID_VIEW_S                       32816
 #define ID_VIEW_VIEW                    32817
 #define ID_VIEW_OBJECT                  32818
+#define ID_VIEW_SIL                     32819
+#define ID_VIEW_DRAW_SIL                32820
+#define ID_VIEW_DRAW_SILS               32821
+#define ID_DRAWS_A                      32822
+#define ID_DRAWS_B                      32823
+#define ID_DRAWS_FLIPNORMALS            32824
+#define ID_DRAWS_FLIP_NORMALS           32825
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        147
-#define _APS_NEXT_COMMAND_VALUE         32819
+#define _APS_NEXT_COMMAND_VALUE         32826
 #define _APS_NEXT_CONTROL_VALUE         1047
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

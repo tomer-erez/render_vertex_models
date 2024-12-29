@@ -1,6 +1,6 @@
 to do from hw2:
 
--world space/view space transformations via button: Tomer
+-world space/view space transformations via button: Tomer VVV
 all we need to change is if the world button is clicked, apply transformation without translating to the 0,0 and back.
 
 -prespective matrix: Matan
@@ -34,11 +34,12 @@ light calculation: Matan
 
 render button: Matan
 
-back face: Tomer
+back face and Silhouette highlighting: Tomer
 update the ds to have a list of vertices, each one points at 2 polygons, each poly has a front/back normal
+then you can highlight silouets
 
-flip all normals: Tomer
+
+flip all normals: Tomer VVV
 
 background image: Matan
 
-Silhouette highlighting: Tomer

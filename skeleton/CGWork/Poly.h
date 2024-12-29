@@ -29,6 +29,8 @@ public:
     void setPolyNormalCalculated(const Normal& normal);
     void calculatePolyNormal(const Vector4& centroid, const Vector4& direction);
 
+    void flipNormals();
+
     bool hasPolyNormalFromFileDefined() const;
     bool hasPolyNormalCalculatedDefined() const;
 

@@ -43,8 +43,8 @@ private:
 	bool m_draw_poly_normals_not_from ; // poly normals not from file
 	bool m_draw_vertex_normals_from ; //vertex normals from file
 	bool m_draw_vertex_normals_not_from ; // vertex normal nor from file
-
-
+	int m_draw_silhouettes;
+	int m_flip_normals;
 	int m_nAxis;				// Axis of Action, X Y or Z
 	int m_nAction;				// Rotate, Translate, Scale
 	int m_nView;				// Orthographic, perspective
@@ -134,9 +134,12 @@ private:
 
 	void ApplyTransformation(Matrix4& t);
 	void MapMouseMovement(int deg);
-	
-
+		
+	void OnFlipNormals();
+	void OnDrawSilhouettes(); 
 	// Generated message map functions
+	void DrawSilhouettes(CDC* pDC, double screenHeight, COLORREF silhouetteColor);
+
 protected:
 	//{{AFX_MSG(CCGWorkView)
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
@@ -205,7 +208,8 @@ protected:
 
 	afx_msg void OnUpdateViewObject(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateViewView(CCmdUI* pCmdUI);
-
+	afx_msg void OnUpdateDrawSilhouettes(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateFlipNormals(CCmdUI* pCmdUI);
 
 
 	//}}AFX_MSG

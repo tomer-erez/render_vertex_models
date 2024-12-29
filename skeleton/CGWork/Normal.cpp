@@ -46,3 +46,8 @@ void Normal::transform(const Matrix4& transform, const Matrix4& normalTransform)
     start = transform.transform(start);
     end = start + transformedDirection;
 }
+
+void Normal::flip() {
+    Vector4 direction = start - end; // Reverse the direction vector
+    end = start + direction;         // Update the end point
+}
