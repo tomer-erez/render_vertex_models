@@ -416,7 +416,44 @@ void renderBuffer(int height, int width, Point* zBuffer, int screenHeight, CDC* 
 	}
 }
 
+#include "PngWrapper.h"
+void saveCombinedBufferToPNG(Point* zBuffer, Point* oBuffer, size_t width, size_t height, const std::string& filename) {
+	PngWrapper png(filename.c_str(), width, height);
 
+	// Ensure PNG initialization
+	if (!png.InitWritePng()) {
+		std::cerr << "Failed to initialize PNG writing!" << std::endl;
+		return;
+	}
+
+	for (size_t y = 0; y < height; ++y) {
+		for (size_t x = 0; x < width; ++x) {
+			size_t index = y * width + x;
+			const Point& zPoint = zBuffer[index];
+			const Point& oPoint = oBuffer[index];
+
+			// Extract color components from the oBuffer if valid, otherwise use zBuffer
+			COLORREF color = (oPoint.getColor() != RGB(0, 0, 0)) ? oPoint.getColor() : zPoint.getColor();
+
+			// Convert COLORREF to the expected format (RGB)
+			unsigned int r = GetRValue(color);
+			unsigned int g = GetGValue(color);
+			unsigned int b = GetBValue(color);
+			unsigned int pixelValue = (r << 24) | (g << 16) | (b << 8);
+
+			// Set the pixel value in the PngWrapper (flip the Y-axis)
+			png.SetValue(static_cast<unsigned int>(x), static_cast<unsigned int>(height - 1 - y), pixelValue);
+		}
+	}
+
+	// Write the PNG file
+	if (!png.WritePng()) {
+		std::cerr << "Failed to write PNG file!" << std::endl;
+	}
+	else {
+		std::cout << "Image saved to " << filename << std::endl;
+	}
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // CCGWorkView drawing
@@ -470,7 +507,7 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 		if (scene.hasBoundingBox && m_draw_bounding_box) {
 			DrawBoundingBox(oBuffer, width, height, scene.getBoundingBox(), green); // Green for bounding box
 		}
-		if (m_draw_to_screen) {//render to screen
+		if (m_render_to_screen) {//render to screen
 			if (m_solid_rendering) {//if fill the polygons and not just wireframe and normals
 				renderBuffer(height, width, zBuffer, screenHeight, pDCToUse);
 			}
@@ -480,7 +517,8 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 			}
 		}
 		else {//if not to screen
-
+			m_render_to_screen = true;
+			saveCombinedBufferToPNG(zBuffer, oBuffer, width, height, "..\\..\\combined_output.png");
 		}
 	}
 	// Cleanup Z-buffer
