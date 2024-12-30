@@ -348,7 +348,7 @@ void CCGWorkView::DrawLineHelper(CDC* pDC, const Vector4& start, const Vector4& 
 
 
 
-void CCGWorkView::DrawPolygonEdgesAndVertexNormals(CDC* pDC, Poly* poly, double screenHeight, COLORREF color, COLORREF c2) {
+void CCGWorkView::DrawPolygonEdgesAndVertexNormals(CDC* pDC, Poly* poly, double screenHeight, COLORREF color, COLORREF c2, Vector4 cameraPosition) {
 	const std::vector<Vertex>& vertices = poly->getVertices();
 	const size_t vertexCount = vertices.size();
 
@@ -357,7 +357,9 @@ void CCGWorkView::DrawPolygonEdgesAndVertexNormals(CDC* pDC, Poly* poly, double 
 		const Vertex& end = vertices[(i + 1 < vertexCount) ? i + 1 : 0];
 
 		// Draw polygon edge
-		DrawLineHelper(pDC, start, end, screenHeight, color);
+		if (!m_do_back_face_culling || (!start.getNormalCalculated().isBackFacing(cameraPosition) && !end.getNormalCalculated().isBackFacing(cameraPosition))) {
+			DrawLineHelper(pDC, start, end, screenHeight, color);
+		}
 
 		// Draw vertex normals from file
 		if (m_draw_vertex_normals_from ) {
@@ -371,7 +373,6 @@ void CCGWorkView::DrawPolygonEdgesAndVertexNormals(CDC* pDC, Poly* poly, double 
 			const Normal& normalCalculated = start.getNormalCalculated();
 			DrawLineHelper(pDC, normalCalculated.start, normalCalculated.end, screenHeight, c2);
 		}
-		
 	}
 }
 
@@ -453,9 +454,9 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 			// Convert vertices to Point objects for Z-buffer rendering
 
 			// Render the polygon into the Z-buffer
-			renderPolygon(zBuffer, width, height, *poly, cameraPosition);
+			renderPolygon(zBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling);
 			// Draw polygon edges and vertex normals
-			DrawPolygonEdgesAndVertexNormals(pDCToUse, poly, screenHeight, pApp->Object_color, pApp->vertex_normals_color);
+			DrawPolygonEdgesAndVertexNormals(pDCToUse, poly, screenHeight, pApp->Object_color, pApp->vertex_normals_color, cameraPosition);
 			// Draw polygon normals
 			DrawPolygonNormal(pDCToUse, poly, screenHeight, pApp->poly_normals_color);
 
