@@ -41,8 +41,6 @@ void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& poly
     const Vertex& v0 = vertices[0];
     const Vertex& v1 = vertices[1];
     const Vertex& v2 = vertices[2];
-        
-
 
     if (doBackFaceCulling) {
         // Calculate two edges of the triangle
@@ -56,21 +54,19 @@ void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& poly
         Vector4 viewVector = (cameraPosition - v0).normalize();
 
         // Perform back-face culling
-        if (normal.dot(viewVector) > 0) {
-            // Back face: skip rendering this polygon
-            return;
+        if (normal.dot(viewVector) < 0) {
+            return; // Back face: skip rendering this polygon
         }
     }
-
 
     // Use the polygon's color for all pixels
     COLORREF color = polygon.getColor();
 
     // Find the bounding box of the polygon
-    float minX = std::min({ v0.x, v1.x, v2.x });
-    float maxX = std::max({ v0.x, v1.x, v2.x });
-    float minY = std::min({ v0.y, v1.y, v2.y });
-    float maxY = std::max({ v0.y, v1.y, v2.y });
+    float minX = std::floor(std::min({ v0.x, v1.x, v2.x }));
+    float maxX = std::ceil(std::max({ v0.x, v1.x, v2.x }));
+    float minY = std::floor(std::min({ v0.y, v1.y, v2.y }));
+    float maxY = std::ceil(std::max({ v0.y, v1.y, v2.y }));
 
     // Clip to screen bounds
     minX = std::max(minX, 0.0f);
@@ -78,20 +74,28 @@ void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& poly
     minY = std::max(minY, 0.0f);
     maxY = std::min(maxY, static_cast<float>(height - 1));
 
+    // Precompute denominator for barycentric coordinates
+    float denominator = (v1.y - v2.y) * (v0.x - v2.x) + (v2.x - v1.x) * (v0.y - v2.y);
+    const float epsilon = 1e-5f;
+    if (std::abs(denominator) < epsilon) return; // Skip degenerate triangles
+
     // Loop through each pixel in the bounding box
     for (int y = static_cast<int>(minY); y <= static_cast<int>(maxY); y++) {
         for (int x = static_cast<int>(minX); x <= static_cast<int>(maxX); x++) {
             // Compute barycentric coordinates
-            float denominator = (v1.y - v2.y) * (v0.x - v2.x) + (v2.x - v1.x) * (v0.y - v2.y);
             float w0 = ((v1.y - v2.y) * (x - v2.x) + (v2.x - v1.x) * (y - v2.y)) / denominator;
             float w1 = ((v2.y - v0.y) * (x - v2.x) + (v0.x - v2.x) * (y - v2.y)) / denominator;
             float w2 = 1.0f - w0 - w1;
 
-            // Check if the point is inside the triangle
-            if (w0 < 0 || w1 < 0 || w2 < 0) continue;
+            // Check if the point is inside the triangle (with epsilon tolerance)
+            if (w0 < -epsilon || w1 < -epsilon || w2 < -epsilon) continue;
 
             // Interpolate Z-value
             float z = w0 * v0.z + w1 * v1.z + w2 * v2.z;
+
+            // Perspective-correct Z-value (optional, for perspective projections)
+            float w = w0 / v0.w + w1 / v1.w + w2 / v2.w;
+            z = (w0 * v0.z / v0.w + w1 * v1.z / v1.w + w2 * v2.z / v2.w) / w;
 
             // Perform Z-buffer test
             size_t index = y * width + x;
