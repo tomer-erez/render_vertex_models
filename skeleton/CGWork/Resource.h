@@ -95,13 +95,14 @@
 #define ID_RENDER_TOFILE                32826
 #define ID_RENDER_TOSCREEN              32827
 #define ID_VIEW_BACKFACECULLING         32828
+#define ID_VIEW_SOLIDRENDERING          32829
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        147
-#define _APS_NEXT_COMMAND_VALUE         32829
+#define _APS_NEXT_COMMAND_VALUE         32830
 #define _APS_NEXT_CONTROL_VALUE         1047
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

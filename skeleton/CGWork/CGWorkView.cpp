@@ -134,6 +134,9 @@ BEGIN_MESSAGE_MAP(CCGWorkView, CView)
 	ON_COMMAND(ID_VIEW_BACKFACECULLING, &CCGWorkView::OnBackFaceCulling)
 	ON_UPDATE_COMMAND_UI(ID_VIEW_BACKFACECULLING, &CCGWorkView::OnUpdateBackFaceCulling)
 
+	ON_COMMAND(ID_VIEW_SOLIDRENDERING, &CCGWorkView::OnSolidRendering)
+	ON_UPDATE_COMMAND_UI(ID_VIEW_SOLIDRENDERING, &CCGWorkView::OnUpdateSolidRendering)
+
 
 	ON_WM_LBUTTONDOWN()
 	ON_WM_MOUSEMOVE()
@@ -179,7 +182,7 @@ CCGWorkView::CCGWorkView()
 	m_bIsPerspective = false;
 
 	m_nLightShading = ID_LIGHT_SHADING_FLAT;
-
+	m_solid_rendering = true;
 	m_lMaterialAmbient = 0.2;
 	m_lMaterialDiffuse = 0.8;
 	m_lMaterialSpecular = 1.0;
@@ -411,8 +414,17 @@ void CCGWorkView::DrawBoundingBox(CDC* pDC, const BoundingBox& bbox, double scre
 
 
 
-
-
+void renderZbuffer(int height, int width, Point* zBuffer, int screenHeight, CDC* pDCToUse) {
+	// Render Z-buffer contents onto the screen
+	for (size_t y = 0; y < height; ++y) {
+		for (size_t x = 0; x < width; ++x) {
+			const Point& point = zBuffer[y * width + x];
+			if (point.z < FLT_MAX) { // Ignore uninitialized pixels
+				pDCToUse->SetPixel(x, static_cast<int>(screenHeight - y), point.getColor());
+			}
+		}
+	}
+}
 
 
 
@@ -454,22 +466,18 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 			// Convert vertices to Point objects for Z-buffer rendering
 
 			// Render the polygon into the Z-buffer
-			renderPolygon(zBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling);
+			if (m_solid_rendering) {
+				renderPolygon(zBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling);
+			}
 			// Draw polygon edges and vertex normals
 			DrawPolygonEdgesAndVertexNormals(pDCToUse, poly, screenHeight, pApp->Object_color, pApp->vertex_normals_color, cameraPosition);
 			// Draw polygon normals
 			DrawPolygonNormal(pDCToUse, poly, screenHeight, pApp->poly_normals_color);
 
 		}
-
-		// Render Z-buffer contents onto the screen
-		for (size_t y = 0; y < height; ++y) {
-			for (size_t x = 0; x < width; ++x) {
-				const Point& point = zBuffer[y * width + x];
-				if (point.z < FLT_MAX) { // Ignore uninitialized pixels
-					pDCToUse->SetPixel(x, static_cast<int>(screenHeight - y), point.getColor());
-				}
-			}
+		if (m_solid_rendering) {
+			renderZbuffer(height, width, zBuffer, screenHeight, pDCToUse);
+			// Render Z-buffer contents onto the screen
 		}
 
 		// Draw bounding box if flag is set
@@ -1304,6 +1312,15 @@ void CCGWorkView::OnBackFaceCulling() {
 void CCGWorkView::OnUpdateBackFaceCulling(CCmdUI* pCmdUI) {
 	pCmdUI->SetCheck(m_do_back_face_culling == true);
 }
+
+void CCGWorkView::OnSolidRendering() {
+	m_solid_rendering = !m_solid_rendering;
+}
+
+void CCGWorkView::OnUpdateSolidRendering(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_solid_rendering == true);
+}
+
 
 
 
