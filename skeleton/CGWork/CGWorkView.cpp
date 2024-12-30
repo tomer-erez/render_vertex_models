@@ -443,8 +443,9 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 	const COLORREF green = RGB(0, 255, 0);
 	Vector4 cameraPosition(screenWidth / 2.0, screenHeight / 2.0, -500.0); // Z position is set to -500 for perspective
 
-	// Initialize Z-buffer
+	// buffer for the polygon's filling
 	Point* zBuffer = initZBuffer(width, height);
+	//other buffer for normals bounding boxes and wireframe
 	Point* oBuffer = initZBuffer(width, height);
 
 	// Draw edges, normals, and interiors using Z-buffer
@@ -469,21 +470,25 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 		if (scene.hasBoundingBox && m_draw_bounding_box) {
 			DrawBoundingBox(oBuffer, width, height, scene.getBoundingBox(), green); // Green for bounding box
 		}
-		if (m_solid_rendering) {
-			renderBuffer(height, width, zBuffer, screenHeight, pDCToUse);
-			// Render Z-buffer contents onto the screen
+		if (m_draw_to_screen) {//render to screen
+			if (m_solid_rendering) {//if fill the polygons and not just wireframe and normals
+				renderBuffer(height, width, zBuffer, screenHeight, pDCToUse);
+			}
+			renderBuffer(height, width, oBuffer, screenHeight, pDCToUse);//wire frame normals and bbox
+			if (pDCToUse != m_pDC) {// to screen
+				m_pDC->BitBlt(r.left, r.top, r.Width(), r.Height(), pDCToUse, r.left, r.top, SRCCOPY);
+			}
 		}
+		else {//if not to screen
 
+		}
 	}
-	renderBuffer(height, width, oBuffer, screenHeight, pDCToUse);
 	// Cleanup Z-buffer
 	freeZBuffer(zBuffer);
 	freeZBuffer(oBuffer);
 
 	// Copy the double-buffered image to the screen
-	if (pDCToUse != m_pDC) {
-		m_pDC->BitBlt(r.left, r.top, r.Width(), r.Height(), pDCToUse, r.left, r.top, SRCCOPY);
-	}
+
 }
 
 
