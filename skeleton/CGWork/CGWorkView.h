@@ -45,10 +45,12 @@ private:
 	bool m_draw_vertex_normals_not_from ; // vertex normal nor from file
 	int m_draw_silhouettes;
 	int m_flip_normals;
+	bool m_render_to_screen;
 	int m_nAxis;				// Axis of Action, X Y or Z
 	int m_nAction;				// Rotate, Translate, Scale
 	int m_nView;				// Orthographic, perspective
 	bool m_bIsPerspective;			// is the view perspective
+	bool m_draw_to_screen;
 
 	CString m_strItdFileName;		// file name of IRIT data
 
@@ -140,9 +142,15 @@ private:
 	// Generated message map functions
 	void DrawSilhouettes(CDC* pDC, double screenHeight, COLORREF silhouetteColor);
 
+	void OnRenderToFile();
+	void OnRenderToScreen();
+
 protected:
 	//{{AFX_MSG(CCGWorkView)
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+
+
+
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnDestroy();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
@@ -210,6 +218,9 @@ protected:
 	afx_msg void OnUpdateViewView(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateDrawSilhouettes(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateFlipNormals(CCmdUI* pCmdUI);
+
+	afx_msg void OnUpdateRenderToFile(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateRenderToScreen(CCmdUI* pCmdUI);
 
 
 	//}}AFX_MSG
