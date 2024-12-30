@@ -106,4 +106,3 @@ void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& poly
         }
     }
 }
-
