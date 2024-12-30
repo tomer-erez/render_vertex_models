@@ -1,6 +1,7 @@
 #define NOMINMAX // Prevent min and max macros from being defined
 #include "ScanConvertZBuffer.h"
 #include "Point.h"
+
 #include <algorithm> // For std::min, std::max
 #include <cstdlib>   // For malloc and free
 #include <cfloat>    // For FLT_MAX
@@ -23,34 +24,53 @@ void freeZBuffer(Point* zBuffer) {
 
 // Interpolate color between two colors
 COLORREF interpolateColor(COLORREF c1, COLORREF c2, float t) {
-    uint8_t r1 = GetRValue(c1), g1 = GetGValue(c1), b1 = GetBValue(c1);
-    uint8_t r2 = GetRValue(c2), g2 = GetGValue(c2), b2 = GetBValue(c2);
-
-    uint8_t r = static_cast<uint8_t>(r1 + t * (r2 - r1));
-    uint8_t g = static_cast<uint8_t>(g1 + t * (g2 - g1));
-    uint8_t b = static_cast<uint8_t>(b1 + t * (b2 - b1));
-
-    return RGB(r, g, b);
+    return RGB(
+        static_cast<uint8_t>(GetRValue(c1) + t * (GetRValue(c2) - GetRValue(c1))),
+        static_cast<uint8_t>(GetGValue(c1) + t * (GetGValue(c2) - GetGValue(c1))),
+        static_cast<uint8_t>(GetBValue(c1) + t * (GetBValue(c2) - GetBValue(c1)))
+    );
 }
 
 // Render a polygon using scan conversion and Z-buffering
-void renderPolygon(Point* zBuffer, size_t width, size_t height, const std::vector<Point>& polygon) {
-    if (polygon.size() < 3) return; // Polygons must have at least 3 vertices
+// Render a polygon using scan conversion and Z-buffering
+void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& polygon, const Vector4& cameraPosition, bool doBackFaceCulling) {
+    const std::vector<Vertex>& vertices = polygon.getVertices();
+    if (vertices.size() < 3) return; // Polygons must have at least 3 vertices
+
+    // Compute the polygon's normal
+    const Vertex& v0 = vertices[0];
+    const Vertex& v1 = vertices[1];
+    const Vertex& v2 = vertices[2];
+        
+
+
+    if (doBackFaceCulling) {
+        // Calculate two edges of the triangle
+        Vector4 edge1 = v1 - v0;
+        Vector4 edge2 = v2 - v0;
+
+        // Compute the polygon's normal (cross product of the edges)
+        Vector4 normal = edge1.cross(edge2).normalize();
+
+        // Compute the view vector (from the polygon to the camera)
+        Vector4 viewVector = (cameraPosition - v0).normalize();
+
+        // Perform back-face culling
+        if (normal.dot(viewVector) > 0) {
+            // Back face: skip rendering this polygon
+            return;
+        }
+    }
+
+
+    // Use the polygon's color for all pixels
+    COLORREF color = polygon.getColor();
 
     // Find the bounding box of the polygon
-    float minX = std::min_element(polygon.begin(), polygon.end(), [](const Point& a, const Point& b) {
-        return a.x < b.x;
-        })->x;
-    float maxX = std::max_element(polygon.begin(), polygon.end(), [](const Point& a, const Point& b) {
-        return a.x < b.x;
-        })->x;
-
-    float minY = std::min_element(polygon.begin(), polygon.end(), [](const Point& a, const Point& b) {
-        return a.y < b.y;
-        })->y;
-    float maxY = std::max_element(polygon.begin(), polygon.end(), [](const Point& a, const Point& b) {
-        return a.y < b.y;
-        })->y;
+    float minX = std::min({ v0.x, v1.x, v2.x });
+    float maxX = std::max({ v0.x, v1.x, v2.x });
+    float minY = std::min({ v0.y, v1.y, v2.y });
+    float maxY = std::max({ v0.y, v1.y, v2.y });
 
     // Clip to screen bounds
     minX = std::max(minX, 0.0f);
@@ -61,44 +81,25 @@ void renderPolygon(Point* zBuffer, size_t width, size_t height, const std::vecto
     // Loop through each pixel in the bounding box
     for (int y = static_cast<int>(minY); y <= static_cast<int>(maxY); y++) {
         for (int x = static_cast<int>(minX); x <= static_cast<int>(maxX); x++) {
-            float wSum = 0.0f;
-            bool inside = true;
-            std::vector<float> weights(polygon.size(), 0.0f);
+            // Compute barycentric coordinates
+            float denominator = (v1.y - v2.y) * (v0.x - v2.x) + (v2.x - v1.x) * (v0.y - v2.y);
+            float w0 = ((v1.y - v2.y) * (x - v2.x) + (v2.x - v1.x) * (y - v2.y)) / denominator;
+            float w1 = ((v2.y - v0.y) * (x - v2.x) + (v0.x - v2.x) * (y - v2.y)) / denominator;
+            float w2 = 1.0f - w0 - w1;
 
-            // Compute weights for each vertex
-            for (size_t i = 0; i < polygon.size(); i++) {
-                const Point& p1 = polygon[i];
-                const Point& p2 = polygon[(i + 1) % polygon.size()];
+            // Check if the point is inside the triangle
+            if (w0 < 0 || w1 < 0 || w2 < 0) continue;
 
-                float edgeW = (p2.x - p1.x) * (y - p1.y) - (p2.y - p1.y) * (x - p1.x);
-                if (edgeW < 0) {
-                    inside = false;
-                    break;
-                }
-                weights[i] = edgeW;
-                wSum += edgeW;
-            }
+            // Interpolate Z-value
+            float z = w0 * v0.z + w1 * v1.z + w2 * v2.z;
 
-            if (!inside || wSum == 0.0f) continue;
-
-            // Normalize weights
-            for (float& weight : weights) {
-                weight /= wSum;
-            }
-
-            // Interpolate Z and color using weights
-            float z = 0.0f;
-            COLORREF color = RGB(0, 0, 0);
-            for (size_t i = 0; i < polygon.size(); i++) {
-                z += weights[i] * polygon[i].z;
-                color = interpolateColor(color, polygon[i].getColor(), weights[i]);
-            }
-
-            // Z-buffer test
+            // Perform Z-buffer test
             size_t index = y * width + x;
-            if (z < zBuffer[index].z) {
-                zBuffer[index] = Point(static_cast<float>(x), static_cast<float>(y), z, 1.0f, color);
-            }
+            if (z >= zBuffer[index].z) continue; // Skip if not closer
+
+            // Update Z-buffer and pixel data
+            zBuffer[index] = Point(static_cast<float>(x), static_cast<float>(y), z, 1.0f, color);
         }
     }
 }
+

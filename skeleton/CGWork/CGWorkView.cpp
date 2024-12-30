@@ -131,6 +131,10 @@ BEGIN_MESSAGE_MAP(CCGWorkView, CView)
 	ON_COMMAND(ID_RENDER_TOSCREEN, &CCGWorkView::OnRenderToScreen)
 	ON_UPDATE_COMMAND_UI(ID_RENDER_TOSCREEN, &CCGWorkView::OnUpdateRenderToScreen)
 
+	ON_COMMAND(ID_VIEW_BACKFACECULLING, &CCGWorkView::OnBackFaceCulling)
+	ON_UPDATE_COMMAND_UI(ID_VIEW_BACKFACECULLING, &CCGWorkView::OnUpdateBackFaceCulling)
+
+
 	ON_WM_LBUTTONDOWN()
 	ON_WM_MOUSEMOVE()
 	ON_WM_LBUTTONUP()
@@ -187,6 +191,7 @@ CCGWorkView::CCGWorkView()
 	m_pDbDC = NULL;
 	m_isDragging = false;
 	prev_start = CPoint(0, 0);
+	m_do_back_face_culling = false;
 }
 
 CCGWorkView::~CCGWorkView()
@@ -429,12 +434,15 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 	pDCToUse->FillSolidRect(&r, scene.getBackgroundColor()); // Fill background color
 
 	const double screenHeight = static_cast<double>(r.Height());
+	const double screenWidth = static_cast<double>(r.Width());
 	const size_t width = static_cast<size_t>(r.Width());
 	const size_t height = static_cast<size_t>(r.Height());
 	const COLORREF green = RGB(0, 255, 0);
+	Vector4 cameraPosition(screenWidth / 2.0, screenHeight / 2.0, -500.0); // Z position is set to -500 for perspective
 
 	// Initialize Z-buffer
 	Point* zBuffer = initZBuffer(width, height);
+
 
 	// Draw edges, normals, and interiors using Z-buffer
 	if (!scene.getPolygons()->empty()) {
@@ -443,13 +451,9 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 			COLORREF color = poly->getColor();
 
 			// Convert vertices to Point objects for Z-buffer rendering
-			std::vector<Point> polygonPoints;
-			for (const Vertex& vertex : vertices) {
-				polygonPoints.emplace_back(vertex.x, vertex.y, vertex.z, 1.0f, color);
-			}
 
 			// Render the polygon into the Z-buffer
-			renderPolygon(zBuffer, width, height, polygonPoints);
+			renderPolygon(zBuffer, width, height, *poly, cameraPosition);
 			// Draw polygon edges and vertex normals
 			DrawPolygonEdgesAndVertexNormals(pDCToUse, poly, screenHeight, pApp->Object_color, pApp->vertex_normals_color);
 			// Draw polygon normals
@@ -1292,6 +1296,15 @@ void CCGWorkView::OnUpdateRenderToScreen(CCmdUI* pCmdUI) {
 	pCmdUI->SetCheck(m_render_to_screen == true);
 }
 
+void CCGWorkView::OnBackFaceCulling() {
+	m_do_back_face_culling = !m_do_back_face_culling;
+}
+
+void CCGWorkView::OnUpdateBackFaceCulling(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_do_back_face_culling == true);
+}
+
+
 
 ////////////polygon finess:
 
@@ -1328,3 +1341,4 @@ void CCGWorkView::OnOptionsPolygonFineness()
 	std::thread dialogThread(PolygonFinenessThread);
 	dialogThread.detach();
 }
+
