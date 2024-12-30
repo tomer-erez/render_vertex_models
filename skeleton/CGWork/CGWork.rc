@@ -85,6 +85,7 @@ BEGIN
         MENUITEM "object space transofrmation", ID_VIEW_OBJECT
         MENUITEM SEPARATOR
         MENUITEM "back face culling",           ID_VIEW_BACKFACECULLING
+        MENUITEM "solid rendering",             ID_VIEW_SOLIDRENDERING, CHECKED
     END
     POPUP "A&ction"
     BEGIN
