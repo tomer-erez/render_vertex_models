@@ -2,7 +2,7 @@
 //
 #include "stdafx.h"
 #include "CGWork.h"
-
+#include "ScanConvertZBuffer.h"
 #include "CGWorkDoc.h"
 #include "CGWorkView.h"
 #include <algorithm> // Required for std::min
@@ -125,6 +125,12 @@ BEGIN_MESSAGE_MAP(CCGWorkView, CView)
 	ON_COMMAND(ID_DRAWS_FLIP_NORMALS, &CCGWorkView::OnFlipNormals)
 	ON_UPDATE_COMMAND_UI(ID_DRAWS_FLIP_NORMALS, &CCGWorkView::OnUpdateFlipNormals)
 
+	ON_COMMAND(ID_RENDER_TOFILE, &CCGWorkView::OnRenderToFile)
+	ON_UPDATE_COMMAND_UI(ID_RENDER_TOFILE, &CCGWorkView::OnUpdateRenderToFile)
+
+	ON_COMMAND(ID_RENDER_TOSCREEN, &CCGWorkView::OnRenderToScreen)
+	ON_UPDATE_COMMAND_UI(ID_RENDER_TOSCREEN, &CCGWorkView::OnUpdateRenderToScreen)
+
 	ON_WM_LBUTTONDOWN()
 	ON_WM_MOUSEMOVE()
 	ON_WM_LBUTTONUP()
@@ -157,10 +163,14 @@ CCGWorkView::CCGWorkView()
 	m_draw_vertex_normals_not_from = false; // vertex normal nor from file
 	m_is_object_space_transform = 1;//default to transform relative to object center and not to 0,0
 	m_flip_normals = 0;
+	m_draw_silhouettes = 0;
+	m_render_to_screen = true;
 	// Set default values
 	m_nAxis = ID_AXIS_X;
 	m_nAction = ID_ACTION_ROTATE;
 	m_nView = ID_VIEW_ORTHOGRAPHIC;
+
+	m_draw_to_screen = true;
 
 	m_bIsPerspective = false;
 
@@ -392,6 +402,14 @@ void CCGWorkView::DrawBoundingBox(CDC* pDC, const BoundingBox& bbox, double scre
 	}
 }
 
+
+
+
+
+
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CCGWorkView drawing
 /////////////////////////////////////////////////////////////////////////////
@@ -411,30 +429,59 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 	pDCToUse->FillSolidRect(&r, scene.getBackgroundColor()); // Fill background color
 
 	const double screenHeight = static_cast<double>(r.Height());
+	const size_t width = static_cast<size_t>(r.Width());
+	const size_t height = static_cast<size_t>(r.Height());
 	const COLORREF green = RGB(0, 255, 0);
+
+	// Initialize Z-buffer
+	Point* zBuffer = initZBuffer(width, height);
+
+	// Draw edges, normals, and interiors using Z-buffer
 	if (!scene.getPolygons()->empty()) {
 		for (Poly* poly : *scene.getPolygons()) {
 			const std::vector<Vertex>& vertices = poly->getVertices();
 			COLORREF color = poly->getColor();
 
+			// Convert vertices to Point objects for Z-buffer rendering
+			std::vector<Point> polygonPoints;
+			for (const Vertex& vertex : vertices) {
+				polygonPoints.emplace_back(vertex.x, vertex.y, vertex.z, 1.0f, color);
+			}
+
+			// Render the polygon into the Z-buffer
+			renderPolygon(zBuffer, width, height, polygonPoints);
 			// Draw polygon edges and vertex normals
 			DrawPolygonEdgesAndVertexNormals(pDCToUse, poly, screenHeight, pApp->Object_color, pApp->vertex_normals_color);
-
 			// Draw polygon normals
 			DrawPolygonNormal(pDCToUse, poly, screenHeight, pApp->poly_normals_color);
+
+		}
+
+		// Render Z-buffer contents onto the screen
+		for (size_t y = 0; y < height; ++y) {
+			for (size_t x = 0; x < width; ++x) {
+				const Point& point = zBuffer[y * width + x];
+				if (point.z < FLT_MAX) { // Ignore uninitialized pixels
+					pDCToUse->SetPixel(x, static_cast<int>(screenHeight - y), point.getColor());
+				}
+			}
 		}
 
 		// Draw bounding box if flag is set
 		if (scene.hasBoundingBox && m_draw_bounding_box) {
-			DrawBoundingBox(pDCToUse, scene.getBoundingBox(), screenHeight, green); // Blue for bounding box
-
-		}
-
-		if (pDCToUse != m_pDC) {
-			m_pDC->BitBlt(r.left, r.top, r.Width(), r.Height(), pDCToUse, r.left, r.top, SRCCOPY);
+			DrawBoundingBox(pDCToUse, scene.getBoundingBox(), screenHeight, green); // Green for bounding box
 		}
 	}
+
+	// Cleanup Z-buffer
+	freeZBuffer(zBuffer);
+
+	// Copy the double-buffered image to the screen
+	if (pDCToUse != m_pDC) {
+		m_pDC->BitBlt(r.left, r.top, r.Width(), r.Height(), pDCToUse, r.left, r.top, SRCCOPY);
+	}
 }
+
 
 
 
@@ -1227,9 +1274,23 @@ void CCGWorkView::OnFlipNormals() {
 }
 void CCGWorkView::OnUpdateFlipNormals(CCmdUI* pCmdUI) {
 	pCmdUI->SetCheck(m_flip_normals == 1);
-
 }
 
+void CCGWorkView::OnRenderToFile() {
+	m_render_to_screen = !m_render_to_screen;
+}
+
+void CCGWorkView::OnUpdateRenderToFile(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_render_to_screen == false);
+}
+
+void CCGWorkView::OnRenderToScreen() {
+	m_render_to_screen = !m_render_to_screen;
+}
+
+void CCGWorkView::OnUpdateRenderToScreen(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_render_to_screen == true);
+}
 
 
 ////////////polygon finess:

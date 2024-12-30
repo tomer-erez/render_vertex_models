@@ -130,6 +130,11 @@ BEGIN
         MENUITEM "Polygon Normals NOT from *itd file", ID_VIEW_POLYGONNORMALSNOTFROM
         MENUITEM "flip normals",                ID_DRAWS_FLIP_NORMALS
     END
+    POPUP "render"
+    BEGIN
+        MENUITEM "to file",                     ID_RENDER_TOFILE
+        MENUITEM "to screen",                   ID_RENDER_TOSCREEN
+    END
 END
 
 
