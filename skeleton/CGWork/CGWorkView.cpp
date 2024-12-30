@@ -332,26 +332,20 @@ BOOL CCGWorkView::OnEraseBkgnd(CDC* pDC)
 }
 
 // Helper function to draw a single line
-void CCGWorkView::DrawLineHelper(CDC* pDC, const Vector4& start, const Vector4& end, double screenHeight, COLORREF color) {
+void CCGWorkView::DrawLineHelper(Point* oBuffer, size_t width, size_t height, const Vector4& start, const Vector4& end, COLORREF color) {
 	LineDrawer::DrawLine(
-		pDC->m_hDC,
-		Vector4(static_cast<double>(start.x), static_cast<double>(screenHeight - start.y), 0.0),
-		Vector4(static_cast<double>(end.x), static_cast<double>(screenHeight - end.y), 0.0),
+		oBuffer,
+		width,
+		height,
+		start,
+		end,
 		color
 	);
 }
 
 
-/*
-	bool m_draw_poly_normals_from ; //poly normals form file
-	bool m_draw_poly_normals_not_from ; // poly normals not from file
-	bool m_draw_vertex_normals_from ; //vertex normals from file
-	bool m_draw_vertex_normals_not_from ; // vertex normal nor from file
-*/
 
-
-
-void CCGWorkView::DrawPolygonEdgesAndVertexNormals(CDC* pDC, Poly* poly, double screenHeight, COLORREF color, COLORREF c2, Vector4 cameraPosition) {
+void CCGWorkView::DrawPolygonEdgesAndVertexNormals(Point* oBuffer, size_t width, size_t height, Poly* poly, Vector4 cameraPosition, COLORREF edgeColor, COLORREF normalColor) {
 	const std::vector<Vertex>& vertices = poly->getVertices();
 	const size_t vertexCount = vertices.size();
 
@@ -361,44 +355,40 @@ void CCGWorkView::DrawPolygonEdgesAndVertexNormals(CDC* pDC, Poly* poly, double 
 
 		// Draw polygon edge
 		if (!m_do_back_face_culling || (!start.getNormalCalculated().isBackFacing(cameraPosition) && !end.getNormalCalculated().isBackFacing(cameraPosition))) {
-			DrawLineHelper(pDC, start, end, screenHeight, color);
+			DrawLineHelper(oBuffer, width, height, start, end, edgeColor);
 		}
 
 		// Draw vertex normals from file
-		if (m_draw_vertex_normals_from ) {
-			// Draw normals provided from file
+		if (m_draw_vertex_normals_from) {
 			const Normal& normalFromFile = start.getNormalFromFile();
-			DrawLineHelper(pDC, normalFromFile.start, normalFromFile.end, screenHeight, c2);
+			DrawLineHelper(oBuffer, width, height, normalFromFile.start, normalFromFile.end, normalColor);
 		}
-		//draw vertex normals calculated
+
+		// Draw vertex normals calculated
 		if (m_draw_vertex_normals_not_from) {
-			// Draw calculated normals
 			const Normal& normalCalculated = start.getNormalCalculated();
-			DrawLineHelper(pDC, normalCalculated.start, normalCalculated.end, screenHeight, c2);
+			DrawLineHelper(oBuffer, width, height, normalCalculated.start, normalCalculated.end, normalColor);
 		}
 	}
 }
 
 
-
-
-
-void CCGWorkView::DrawPolygonNormal(CDC* pDC, Poly* poly, double screenHeight, COLORREF color) {
+void CCGWorkView::DrawPolygonNormal(Point* oBuffer, size_t width, size_t height, Poly* poly, COLORREF color) {
 	// Draw polygon normals from file
 	if (m_draw_poly_normals_from) {
 		const Normal& normalFromFile = poly->getPolyNormalFromFile();
-		DrawLineHelper(pDC, normalFromFile.start, normalFromFile.end, screenHeight, color); // Blue
+		DrawLineHelper(oBuffer, width, height, normalFromFile.start, normalFromFile.end, color);
 	}
 
 	// Draw calculated polygon normals
 	if (m_draw_poly_normals_not_from) {
 		const Normal& normalCalculated = poly->getPolyNormalCalculated();
-		DrawLineHelper(pDC, normalCalculated.start, normalCalculated.end, screenHeight, color); // Orange
+		DrawLineHelper(oBuffer, width, height, normalCalculated.start, normalCalculated.end, color);
 	}
 }
 
-void CCGWorkView::DrawBoundingBox(CDC* pDC, const BoundingBox& bbox, double screenHeight, COLORREF color) {
-	std::vector<Vector4> corners = bbox.getCorners();
+void CCGWorkView::DrawBoundingBox(Point* oBuffer, size_t width, size_t height, const BoundingBox& bbox, COLORREF color) {
+	const std::vector<Vector4>& corners = bbox.getCorners();
 
 	std::vector<std::pair<int, int>> edges = {
 		{0, 1}, {1, 3}, {3, 2}, {2, 0}, // Top face
@@ -407,14 +397,14 @@ void CCGWorkView::DrawBoundingBox(CDC* pDC, const BoundingBox& bbox, double scre
 	};
 
 	for (const auto& edge : edges) {
-		DrawLineHelper(pDC, corners[edge.first], corners[edge.second], screenHeight, color);
+		DrawLineHelper(oBuffer, width, height, corners[edge.first], corners[edge.second], color);
 	}
 }
 
 
 
 
-void renderZbuffer(int height, int width, Point* zBuffer, int screenHeight, CDC* pDCToUse) {
+void renderBuffer(int height, int width, Point* zBuffer, int screenHeight, CDC* pDCToUse) {
 	// Render Z-buffer contents onto the screen
 	for (size_t y = 0; y < height; ++y) {
 		for (size_t x = 0; x < width; ++x) {
@@ -455,7 +445,7 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 
 	// Initialize Z-buffer
 	Point* zBuffer = initZBuffer(width, height);
-
+	Point* oBuffer = initZBuffer(width, height);
 
 	// Draw edges, normals, and interiors using Z-buffer
 	if (!scene.getPolygons()->empty()) {
@@ -470,24 +460,25 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 				renderPolygon(zBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling);
 			}
 			// Draw polygon edges and vertex normals
-			DrawPolygonEdgesAndVertexNormals(pDCToUse, poly, screenHeight, pApp->Object_color, pApp->vertex_normals_color, cameraPosition);
+			DrawPolygonEdgesAndVertexNormals(oBuffer, width, height, poly, cameraPosition, pApp->Object_color, pApp->vertex_normals_color);
 			// Draw polygon normals
-			DrawPolygonNormal(pDCToUse, poly, screenHeight, pApp->poly_normals_color);
+			DrawPolygonNormal(oBuffer, width, height, poly, pApp->poly_normals_color);
 
 		}
+		// Draw bounding box if flag is set
+		if (scene.hasBoundingBox && m_draw_bounding_box) {
+			DrawBoundingBox(oBuffer, width, height, scene.getBoundingBox(), green); // Green for bounding box
+		}
 		if (m_solid_rendering) {
-			renderZbuffer(height, width, zBuffer, screenHeight, pDCToUse);
+			renderBuffer(height, width, zBuffer, screenHeight, pDCToUse);
 			// Render Z-buffer contents onto the screen
 		}
 
-		// Draw bounding box if flag is set
-		if (scene.hasBoundingBox && m_draw_bounding_box) {
-			DrawBoundingBox(pDCToUse, scene.getBoundingBox(), screenHeight, green); // Green for bounding box
-		}
 	}
-
+	renderBuffer(height, width, oBuffer, screenHeight, pDCToUse);
 	// Cleanup Z-buffer
 	freeZBuffer(zBuffer);
+	freeZBuffer(oBuffer);
 
 	// Copy the double-buffered image to the screen
 	if (pDCToUse != m_pDC) {

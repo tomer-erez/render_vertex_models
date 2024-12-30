@@ -12,7 +12,7 @@
 #include "Poly.h"
 #include "Scene.h"
 #include "Matrix4.h"
-
+#include "Point.h"
 #include "gl\gl.h"    // Include the standard CGWork  headers
 #include "gl\glu.h"   // Add the utility library
 
@@ -115,11 +115,12 @@ private:
 	void InitializeFinenessSlider(); // Initializes the fineness slider
 	void OnFinenessSliderChanged();  // Handles fineness slider changes
 	void UpdateSceneForFineness();
-	void DrawPolygonEdgesAndVertexNormals(CDC* pDC, Poly* poly, double screenHeight, COLORREF color, COLORREF c2, Vector4 cameraPosition);
-	void DrawPolygonNormal(CDC* pDC, Poly* poly, double screenHeight, COLORREF color);
-	void DrawBoundingBox(CDC* pDC, const BoundingBox& bbox, double screenHeight, COLORREF color);
-	void DrawLineHelper(CDC* pDC, const Vector4& start, const Vector4& end, double screenHeight, COLORREF color);
+	void DrawPolygonEdgesAndVertexNormals(Point* oBuffer, size_t width, size_t height, Poly* poly, Vector4 cameraPosition, COLORREF edgeColor, COLORREF normalColor);
+	void DrawPolygonNormal(Point* oBuffer, size_t width, size_t height, Poly* poly, COLORREF color);
+	void DrawBoundingBox(Point* oBuffer, size_t width, size_t height, const BoundingBox& bbox, COLORREF color);
+	void DrawLineHelper(Point* oBuffer, size_t width, size_t height, const Vector4& start, const Vector4& end, COLORREF color);
 
+	
 	Matrix4 getMatrixToCenterObject();
 
 	void ApplyXRotation(int d);
