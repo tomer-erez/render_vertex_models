@@ -83,6 +83,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "view space transformation",   ID_VIEW_VIEW
         MENUITEM "object space transofrmation", ID_VIEW_OBJECT
+        MENUITEM SEPARATOR
+        MENUITEM "back face culling",           ID_VIEW_BACKFACECULLING
     END
     POPUP "A&ction"
     BEGIN

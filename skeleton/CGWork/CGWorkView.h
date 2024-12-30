@@ -51,7 +51,7 @@ private:
 	int m_nView;				// Orthographic, perspective
 	bool m_bIsPerspective;			// is the view perspective
 	bool m_draw_to_screen;
-
+	bool m_do_back_face_culling;
 	CString m_strItdFileName;		// file name of IRIT data
 
 	int m_nLightShading;			// shading: Flat, Gouraud.
@@ -144,6 +144,7 @@ private:
 
 	void OnRenderToFile();
 	void OnRenderToScreen();
+	void OnBackFaceCulling();
 
 protected:
 	//{{AFX_MSG(CCGWorkView)
@@ -221,6 +222,7 @@ protected:
 
 	afx_msg void OnUpdateRenderToFile(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateRenderToScreen(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateBackFaceCulling(CCmdUI* pCmdUI);
 
 
 	//}}AFX_MSG
