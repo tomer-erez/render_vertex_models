@@ -186,9 +186,6 @@ CCGWorkView::CCGWorkView()
 	m_nAxis = ID_AXIS_X;
 	m_nAction = ID_ACTION_ROTATE;
 	m_nView = ID_VIEW_ORTHOGRAPHIC;
-
-	m_draw_to_screen = true;
-
 	m_bIsPerspective = false;
 	m_back_ground_image_was_set = false;
 
@@ -416,7 +413,6 @@ void CCGWorkView::DrawBoundingBox(Point* oBuffer, size_t width, size_t height, c
 void saveCombinedBufferToPNG(Point* bgBuffer, Point* zBuffer, Point* oBuffer, size_t width, size_t height, const std::string& filename) {
 	PngWrapper png(filename.c_str(), width, height);
 
-	// Ensure PNG initialization
 	if (!png.InitWritePng()) {
 		std::cerr << "Failed to initialize PNG writing!" << std::endl;
 		return;
@@ -440,19 +436,18 @@ void saveCombinedBufferToPNG(Point* bgBuffer, Point* zBuffer, Point* oBuffer, si
 			if (oBuffer && oBuffer[index].getColor() != RGB(0, 0, 0)) {
 				color = oBuffer[index].getColor();
 			}
-
-			// Convert COLORREF to RGBA for PngWrapper
-			unsigned int r = GetRValue(color);
+			
+			unsigned int b = GetRValue(color);
 			unsigned int g = GetGValue(color);
-			unsigned int b = GetBValue(color);
+			unsigned int r = GetBValue(color);
 			unsigned int pixelValue = (r << 24) | (g << 16) | (b << 8);
+			
 
-			// Set the pixel value in the PngWrapper (flip the Y-axis)
-			png.SetValue(static_cast<unsigned int>(x), static_cast<unsigned int>(height - 1 - y), pixelValue);
+
+			png.SetValue(static_cast<unsigned int>(x), static_cast<unsigned int>(y), pixelValue);
 		}
 	}
 
-	// Write the PNG file
 	if (!png.WritePng()) {
 		std::cerr << "Failed to write PNG file!" << std::endl;
 	}
@@ -463,41 +458,41 @@ void saveCombinedBufferToPNG(Point* bgBuffer, Point* zBuffer, Point* oBuffer, si
 
 
 
+
 void StretchBackgroundToBuffer(Point* bgBuffer, int* bgImageData, int bgWidth, int bgHeight, size_t width, size_t height) {
 	for (size_t y = 0; y < height; y++) {
 		for (size_t x = 0; x < width; x++) {
-			// Map screen coordinates to background image coordinates
 			int srcX = static_cast<int>((static_cast<float>(x) / width) * bgWidth);
 			int srcY = static_cast<int>((static_cast<float>(y) / height) * bgHeight);
 
 			// Get the color from the background image
 			int color = bgImageData[srcY * bgWidth + srcX];
 
-			// Write to the background buffer
+			// Keep it in RGB format
 			bgBuffer[y * width + x] = Point(static_cast<float>(x), static_cast<float>(y), 1.0f, 1.0f, color);
 		}
 	}
 }
 
+
 void RepeatBackgroundToBuffer(Point* bgBuffer, int* bgImageData, int bgWidth, int bgHeight, size_t width, size_t height) {
 	for (size_t y = 0; y < height; y++) {
 		for (size_t x = 0; x < width; x++) {
-			// Map screen coordinates to background image coordinates using modulo for repetition
 			int srcX = x % bgWidth;
 			int srcY = y % bgHeight;
 
 			// Get the color from the background image
 			int color = bgImageData[srcY * bgWidth + srcX];
 
-			// Write to the background buffer
+			// Keep it in RGB format
 			bgBuffer[y * width + x] = Point(static_cast<float>(x), static_cast<float>(y), 1.0f, 1.0f, color);
 		}
 	}
 }
 
 
+
 void renderToBitmap(Point* bgBuffer, Point* zBuffer, Point* oBuffer, int width, int height, CDC* pDC) {
-	// Define a DIB (Device-Independent Bitmap) header
 	BITMAPINFO bmi = {};
 	bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	bmi.bmiHeader.biWidth = width;
@@ -506,7 +501,6 @@ void renderToBitmap(Point* bgBuffer, Point* zBuffer, Point* oBuffer, int width, 
 	bmi.bmiHeader.biBitCount = 32;   // 32-bit color depth
 	bmi.bmiHeader.biCompression = BI_RGB;
 
-	// Create a DIBSection and get a pointer to its pixel data
 	void* pBits = nullptr;
 	HBITMAP hDIB = CreateDIBSection(pDC->GetSafeHdc(), &bmi, DIB_RGB_COLORS, &pBits, nullptr, 0);
 	if (!hDIB) {
@@ -514,12 +508,10 @@ void renderToBitmap(Point* bgBuffer, Point* zBuffer, Point* oBuffer, int width, 
 		return;
 	}
 
-	// Create a memory DC and select the DIB into it
 	CDC memDC;
 	memDC.CreateCompatibleDC(pDC);
 	HBITMAP hOldBitmap = (HBITMAP)SelectObject(memDC.GetSafeHdc(), hDIB);
 
-	// Fill the DIB with the background color
 	COLORREF* pixels = static_cast<COLORREF*>(pBits);
 	for (int y = 0; y < height; ++y) {
 		for (int x = 0; x < width; ++x) {
@@ -539,19 +531,18 @@ void renderToBitmap(Point* bgBuffer, Point* zBuffer, Point* oBuffer, int width, 
 				color = oBuffer[index].getColor();
 			}
 
-			// Set pixel in the DIB
+			// No conversion needed; buffers already in RGB format
 			pixels[index] = color;
 		}
 	}
 
-	// Transfer the rendered bitmap to the screen
 	pDC->BitBlt(0, 0, width, height, &memDC, 0, 0, SRCCOPY);
 
-	// Cleanup
 	SelectObject(memDC.GetSafeHdc(), hOldBitmap);
 	DeleteObject(hDIB);
 	memDC.DeleteDC();
 }
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -742,12 +733,12 @@ void CCGWorkView::OnFileLoadBackGroundImage() {
 
 	// Load the PNG image
 	PngWrapper pngImage(charPath);
-
 	if (!pngImage.ReadPng()) {
 		AfxMessageBox(_T("Failed to load PNG image."));
 		return;
 	}
 
+	int numChannels = pngImage.GetNumChannels();
 	// Get image dimensions
 	int width = pngImage.GetWidth();
 	int height = pngImage.GetHeight();
@@ -764,18 +755,27 @@ void CCGWorkView::OnFileLoadBackGroundImage() {
 	// Fill the array with pixel data, flipping vertically
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
-			// Flip the image vertically by accessing rows in reverse order
-			int flippedY = height - 1 - y;
-
 			// Get the pixel value
-			int pixel = pngImage.GetValue(x, flippedY);
+			int pixel = pngImage.GetValue(x, y);
 
-			// Correct color if needed (convert BGRA to RGBA or other formats)
-			unsigned int r = (pixel >> 16) & 0xFF; // Extract Red
-			unsigned int g = (pixel >> 8) & 0xFF;  // Extract Green
-			unsigned int b = pixel & 0xFF;         // Extract Blue
-			imageData[y * width + x] = (r << 16) | (g << 8) | b; // Repack into RGB
+			if (numChannels == 4) {
+				// Extract RGBA components, ignoring alpha
+				unsigned int r = (pixel >> 24) & 0xFF; // Extract Red
+				unsigned int g = (pixel >> 16) & 0xFF; // Extract Green
+				unsigned int b = (pixel >> 8) & 0xFF;  // Extract Blue
 
+				// Repack into RGB format (ignoring alpha)
+				imageData[y * width + x] = (r << 16) | (g << 8) | b; // RGB format
+			}
+			else if (numChannels == 3) {
+				// If no alpha channel, process as RGB
+				unsigned int r = (pixel >> 16) & 0xFF;
+				unsigned int g = (pixel >> 8) & 0xFF;
+				unsigned int b = pixel & 0xFF;
+
+				// Repack into RGB format
+				imageData[y * width + x] = (r << 16) | (g << 8) | b;
+			}
 		}
 	}
 
@@ -788,6 +788,7 @@ void CCGWorkView::OnFileLoadBackGroundImage() {
 	AfxMessageBox(_T("Background image loaded successfully!"));
 	m_back_ground_image_was_set = true;
 }
+
 
 
 void CCGWorkView::OnFileLoad() {
