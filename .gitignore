@@ -13,3 +13,6 @@ skeleton/CGWork/Release
 skeleton/CGWork/Debug
 skeleton/CGWork/.vs
 skeleton/bin/Release
+skeleton\bin\Release
+skeleton\bin\Release\*
+skeleton/bin/Release/*
