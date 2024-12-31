@@ -203,12 +203,60 @@ bool Scene::hasVertexNormalsAttribute() const {
     return hasVertexNormals;
 }
 
+bool Scene::setBackgroundImage(const int* imageData, int width, int height) {
+    if (imageData == nullptr || width <= 0 || height <= 0) {
+        std::cerr << "Invalid background image data or dimensions." << std::endl;
+        return false;
+    }
+
+    // Clear any existing background image
+    if (m_backgroundImage) {
+        delete[] m_backgroundImage;
+        m_backgroundImage = nullptr;
+    }
+
+    // Allocate memory for the new background image
+    m_backgroundImageWidth = width;
+    m_backgroundImageHeight = height;
+    m_backgroundImage = new int[width * height];
+
+    if (!m_backgroundImage) {
+        std::cerr << "Failed to allocate memory for background image." << std::endl;
+        return false;
+    }
+
+    // Copy the image data into the scene's background image buffer
+    std::memcpy(m_backgroundImage, imageData, width * height * sizeof(int));
+
+    // Successfully set the background image
+    std::cout << "Background image set successfully. Dimensions: "
+        << width << "x" << height << std::endl;
+    return true;
+}
+
+bool Scene::getBackgroundImage(int*& imageData, int& width, int& height) const {
+    if (!m_backgroundImage || m_backgroundImageWidth <= 0 || m_backgroundImageHeight <= 0) {
+        std::cerr << "No valid background image is set." << std::endl;
+        return false;
+    }
+
+    // Provide the background image data and its dimensions
+    imageData = m_backgroundImage;
+    width = m_backgroundImageWidth;
+    height = m_backgroundImageHeight;
+
+    return true;
+}
+
+
 // Clear the scene
 void Scene::clear() {
     polygons->clear();
     sceneTransform = Matrix4(); // Reset to identity matrix
     boundingBox = { Vector4(DBL_MAX, DBL_MAX, DBL_MAX, 1.0), Vector4(DBL_MIN, DBL_MIN, DBL_MIN, 1.0) };
     hasVertexNormals = false;
+    delete[] m_backgroundImage;
+
 }
 
 

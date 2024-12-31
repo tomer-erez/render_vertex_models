@@ -56,9 +56,10 @@ private:
 	CString m_strItdFileName;		// file name of IRIT data
 
 	int m_nLightShading;			// shading: Flat, Gouraud.
-		
+	bool m_back_ground_image_was_set;
 	int m_is_object_space_transform; // is object or view space transform
-
+	bool m_back_ground_image_on;
+	bool m_back_ground_image_stretch;
 	double m_lMaterialAmbient;		// The Ambient in the scene
 	double m_lMaterialDiffuse;		// The Diffuse in the scene
 	double m_lMaterialSpecular;		// The Specular in the scene
@@ -148,7 +149,8 @@ private:
 	void OnRenderToScreen();
 	void OnBackFaceCulling();
 	void OnSolidRendering();
-
+	void OnBackGroundImageStretch();
+	void OnBackGroundImageOn();
 protected:
 	//{{AFX_MSG(CCGWorkView)
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
@@ -159,6 +161,7 @@ protected:
 	afx_msg void OnDestroy();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg void OnFileLoad();
+	afx_msg void OnFileLoadBackGroundImage();
 	afx_msg void OnViewOrthographic();
 	afx_msg void OnUpdateViewOrthographic(CCmdUI* pCmdUI);
 	afx_msg void OnViewPerspective();
@@ -227,7 +230,8 @@ protected:
 	afx_msg void OnUpdateRenderToScreen(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateBackFaceCulling(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateSolidRendering(CCmdUI* pCmdUI);
-
+	afx_msg void OnUpdateBackGroundImageOn(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateBackGroundImageStretch(CCmdUI* pCmdUI);
 
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()

@@ -31,4 +31,5 @@ public:
 	CSliderCtrl S_slider;
 	int S_slider_value = 1;
 	afx_msg void OnDefaultsButtonClicked();
+	afx_msg void OnBnClickedButton1();
 };

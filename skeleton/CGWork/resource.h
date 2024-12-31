@@ -10,6 +10,7 @@
 #define IDD_PERSPECTIVE                 139
 #define IDD_MOUSE                       141
 #define IDD_FINENESS_CONTROL            145
+#define IDD_DIALOG1                     147
 #define IDC_LIGHT_SPACE                 1010
 #define IDC_RADIO_LIGHT1                1017
 #define IDC_RADIO_LIGHT2                1018
@@ -46,6 +47,7 @@
 #define IDC_EDIT2                       1046
 #define IDC_SLIDER3                     1046
 #define IDC_EDIT6                       1047
+#define IDC_BUTTON1                     1047
 #define IDC_EDIT3                       2042
 #define IDC_EDIT4                       3042
 #define IDC_EDIT5                       4042
@@ -96,14 +98,18 @@
 #define ID_RENDER_TOSCREEN              32827
 #define ID_VIEW_BACKFACECULLING         32828
 #define ID_VIEW_SOLIDRENDERING          32829
+#define ID_BACKGROUNDIMAGE_ON           32830
+#define ID_BACKGROUNDIMAGE_STRETCH      32831
+#define ID_BACKGROUNDIMAGE_REPEAT       32832
+#define ID_BACKGROUNDIMAGE_LOAD         32833
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        147
-#define _APS_NEXT_COMMAND_VALUE         32830
-#define _APS_NEXT_CONTROL_VALUE         1047
+#define _APS_NEXT_RESOURCE_VALUE        149
+#define _APS_NEXT_COMMAND_VALUE         32834
+#define _APS_NEXT_CONTROL_VALUE         1048
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

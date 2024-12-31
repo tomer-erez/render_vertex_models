@@ -49,6 +49,9 @@ private:
     COLORREF wireframeColor;      // Custom wireframe color
     COLORREF normalColor;         // Custom normal color
     COLORREF backgroundColor;     // Custom background color
+    int* m_backgroundImage = nullptr; // Pointer to the background image data
+    int m_backgroundImageWidth = 0;   // Width of the background image
+    int m_backgroundImageHeight = 0;  // Height of the background image
 
     float sensitivity;           // Sensitivity factor for transformations
 
@@ -126,6 +129,12 @@ public:
 
     void updateIsFirstDraw(bool status);
     bool getIsFirstDraw() const;
+
+    // Setter for the background image
+    bool setBackgroundImage(const int* imageData, int width, int height);
+
+    // Getter for the background image
+    bool getBackgroundImage(int*& imageData, int& width, int& height) const;
 
     // Clear the scene (reset the polygons, transformations, and bounding box)
     void clear();
