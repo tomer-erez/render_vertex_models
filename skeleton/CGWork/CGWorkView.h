@@ -50,7 +50,6 @@ private:
 	int m_nAction;				// Rotate, Translate, Scale
 	int m_nView;				// Orthographic, perspective
 	bool m_bIsPerspective;			// is the view perspective
-	bool m_draw_to_screen;
 	bool m_do_back_face_culling;
 	bool m_solid_rendering;
 	CString m_strItdFileName;		// file name of IRIT data
