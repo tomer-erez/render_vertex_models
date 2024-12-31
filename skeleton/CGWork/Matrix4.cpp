@@ -70,7 +70,7 @@ Vector4 Matrix4::transform(const Vector4& v) const {
     }
     else if (newW == 0.0) {
     // Handle the case where w = 0. Avoid division by zero.
-    throw std::runtime_error("Invalid transformation: w = 0");
+    //throw std::runtime_error("Invalid transformation: w = 0");
     }
     return Vector4(newX, newY, newZ, newW);
 }

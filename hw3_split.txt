@@ -17,7 +17,6 @@ later in the onDraw, address the flags and draw the right onesa.
 polygon normals: Tomer VVVVVV
 same as the last point.
 
-
 hw3 tasks:
 
 scan conversion: Tomer VVVVVV
