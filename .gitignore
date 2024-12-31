@@ -6,5 +6,13 @@ skeleton\bin\*
 skeleton\bin
 skeleton/bin/
 skeleton/bin/*
+skeleton\bin
 
 skeleton/bin/Release
+skeleton/CGWork/Release
+skeleton/CGWork/Debug
+skeleton/CGWork/.vs
+skeleton/bin/Release
+skeleton\bin\Release
+skeleton\bin\Release\*
+skeleton/bin/Release/*
