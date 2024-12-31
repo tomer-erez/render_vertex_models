@@ -578,12 +578,15 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 	const int height = r.Height();
 
 	// Initialize buffers
+
 	Point* bgBuffer = nullptr;
 	Point* edgesBuffer = nullptr;
 	Point* normalsBuffer = nullptr;
 	Point* polygonsBuffer = nullptr;
 	Point* boundingBoxBuffer = nullptr;
 	Vector4 cameraPosition(width / 2.0, height / 2.0, -500.0); // Z position is set to -500 for perspective
+	COLORREF white = RGB(255, 255, 255);
+	COLORREF green = RGB(0, 255, 0);
 
 	// Render background
 	if (m_back_ground_image_on) {
@@ -627,7 +630,7 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 			renderPolygon(polygonsBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling);
 		}
 		if (edgesBuffer) {
-			DrawPolygonEdgesAndVertexNormals(edgesBuffer, width, height, poly, cameraPosition, pApp->Object_color, pApp->vertex_normals_color);
+			DrawPolygonEdgesAndVertexNormals(edgesBuffer, width, height, poly, cameraPosition, white, pApp->vertex_normals_color);
 		}
 		if (normalsBuffer) {
 			DrawPolygonNormal(normalsBuffer, width, height, poly, pApp->poly_normals_color);
@@ -636,7 +639,7 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 
 	// Draw bounding box if enabled
 	if (scene.hasBoundingBox && m_draw_bounding_box && boundingBoxBuffer) {
-		DrawBoundingBox(boundingBoxBuffer, width, height, scene.getBoundingBox(), RGB(0, 255, 0));
+		DrawBoundingBox(boundingBoxBuffer, width, height, scene.getBoundingBox(), green);
 	}
 
 	// Render to screen or save to file

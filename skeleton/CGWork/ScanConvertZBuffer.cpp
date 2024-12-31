@@ -32,7 +32,6 @@ COLORREF interpolateColor(COLORREF c1, COLORREF c2, float t) {
 }
 
 // Render a polygon using scan conversion and Z-buffering
-// Render a polygon using scan conversion and Z-buffering
 void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& polygon, const Vector4& cameraPosition, bool doBackFaceCulling) {
     const std::vector<Vertex>& vertices = polygon.getVertices();
     if (vertices.size() < 3) return; // Polygons must have at least 3 vertices
@@ -87,8 +86,8 @@ void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& poly
             float w1 = ((v2.y - v0.y) * (x - v2.x) + (v0.x - v2.x) * (y - v2.y)) / denominator;
             float w2 = 1.0f - w0 - w1;
 
-            // Check if the point is inside the triangle (with epsilon tolerance)
-            if (w0 < -epsilon || w1 < -epsilon || w2 < -epsilon) continue;
+            // Check if the point is strictly inside the triangle (not on edges)
+            if (w0 <= 0.0f || w1 <= 0.0f || w2 <= 0.0f) continue;
 
             // Interpolate Z-value
             float z = w0 * v0.z + w1 * v1.z + w2 * v2.z;
