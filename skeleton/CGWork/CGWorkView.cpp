@@ -5,6 +5,7 @@
 #include "ScanConvertZBuffer.h"
 #include "CGWorkDoc.h"
 #include "CGWorkView.h"
+
 #include <algorithm> // Required for std::min
 #undef min           // Prevent conflicts with Windows macros
 
@@ -60,6 +61,7 @@ BEGIN_MESSAGE_MAP(CCGWorkView, CView)
 	ON_WM_DESTROY()
 	ON_WM_SIZE()
 	ON_COMMAND(ID_FILE_LOAD, OnFileLoad)
+	ON_COMMAND(ID_BACKGROUNDIMAGE_LOAD, OnFileLoadBackGroundImage)
 	ON_COMMAND(ID_VIEW_ORTHOGRAPHIC, OnViewOrthographic)
 	ON_UPDATE_COMMAND_UI(ID_VIEW_ORTHOGRAPHIC, OnUpdateViewOrthographic)
 	ON_COMMAND(ID_VIEW_PERSPECTIVE, OnViewPerspective)
@@ -137,7 +139,13 @@ BEGIN_MESSAGE_MAP(CCGWorkView, CView)
 	ON_COMMAND(ID_VIEW_SOLIDRENDERING, &CCGWorkView::OnSolidRendering)
 	ON_UPDATE_COMMAND_UI(ID_VIEW_SOLIDRENDERING, &CCGWorkView::OnUpdateSolidRendering)
 
+	ON_COMMAND(ID_BACKGROUNDIMAGE_STRETCH, &CCGWorkView::OnBackGroundImageStretch)
+	ON_UPDATE_COMMAND_UI(ID_BACKGROUNDIMAGE_STRETCH, &CCGWorkView::OnUpdateBackGroundImageStretch)
 
+	ON_COMMAND(ID_BACKGROUNDIMAGE_ON, &CCGWorkView::OnBackGroundImageOn)
+	ON_UPDATE_COMMAND_UI(ID_BACKGROUNDIMAGE_ON, &CCGWorkView::OnUpdateBackGroundImageOn)
+
+	
 	ON_WM_LBUTTONDOWN()
 	ON_WM_MOUSEMOVE()
 	ON_WM_LBUTTONUP()
@@ -170,6 +178,8 @@ CCGWorkView::CCGWorkView()
 	m_draw_vertex_normals_not_from = false; // vertex normal nor from file
 	m_is_object_space_transform = 1;//default to transform relative to object center and not to 0,0
 	m_flip_normals = 0;
+	m_back_ground_image_on = false;
+	m_back_ground_image_stretch = true;
 	m_draw_silhouettes = 0;
 	m_render_to_screen = true;
 	// Set default values
@@ -180,6 +190,7 @@ CCGWorkView::CCGWorkView()
 	m_draw_to_screen = true;
 
 	m_bIsPerspective = false;
+	m_back_ground_image_was_set = false;
 
 	m_nLightShading = ID_LIGHT_SHADING_FLAT;
 	m_solid_rendering = true;
@@ -402,22 +413,7 @@ void CCGWorkView::DrawBoundingBox(Point* oBuffer, size_t width, size_t height, c
 }
 
 
-
-
-void renderBuffer(int height, int width, Point* zBuffer, int screenHeight, CDC* pDCToUse) {
-	// Render Z-buffer contents onto the screen
-	for (size_t y = 0; y < height; ++y) {
-		for (size_t x = 0; x < width; ++x) {
-			const Point& point = zBuffer[y * width + x];
-			if (point.z < FLT_MAX) { // Ignore uninitialized pixels
-				pDCToUse->SetPixel(x, static_cast<int>(screenHeight - y), point.getColor());
-			}
-		}
-	}
-}
-
-#include "PngWrapper.h"
-void saveCombinedBufferToPNG(Point* zBuffer, Point* oBuffer, size_t width, size_t height, const std::string& filename) {
+void saveCombinedBufferToPNG(Point* bgBuffer, Point* zBuffer, Point* oBuffer, size_t width, size_t height, const std::string& filename) {
 	PngWrapper png(filename.c_str(), width, height);
 
 	// Ensure PNG initialization
@@ -429,13 +425,23 @@ void saveCombinedBufferToPNG(Point* zBuffer, Point* oBuffer, size_t width, size_
 	for (size_t y = 0; y < height; ++y) {
 		for (size_t x = 0; x < width; ++x) {
 			size_t index = y * width + x;
-			const Point& zPoint = zBuffer[index];
-			const Point& oPoint = oBuffer[index];
 
-			// Extract color components from the oBuffer if valid, otherwise use zBuffer
-			COLORREF color = (oPoint.getColor() != RGB(0, 0, 0)) ? oPoint.getColor() : zPoint.getColor();
+			COLORREF color = RGB(0, 0, 0); // Default color
 
-			// Convert COLORREF to the expected format (RGB)
+			// Render in the order: bgBuffer -> zBuffer -> oBuffer
+			if (bgBuffer && bgBuffer[index].z < FLT_MAX) {
+				color = bgBuffer[index].getColor();
+			}
+
+			if (zBuffer && zBuffer[index].z < FLT_MAX) {
+				color = zBuffer[index].getColor();
+			}
+
+			if (oBuffer && oBuffer[index].getColor() != RGB(0, 0, 0)) {
+				color = oBuffer[index].getColor();
+			}
+
+			// Convert COLORREF to RGBA for PngWrapper
 			unsigned int r = GetRValue(color);
 			unsigned int g = GetGValue(color);
 			unsigned int b = GetBValue(color);
@@ -455,12 +461,104 @@ void saveCombinedBufferToPNG(Point* zBuffer, Point* oBuffer, size_t width, size_
 	}
 }
 
+
+
+void StretchBackgroundToBuffer(Point* bgBuffer, int* bgImageData, int bgWidth, int bgHeight, size_t width, size_t height) {
+	for (size_t y = 0; y < height; y++) {
+		for (size_t x = 0; x < width; x++) {
+			// Map screen coordinates to background image coordinates
+			int srcX = static_cast<int>((static_cast<float>(x) / width) * bgWidth);
+			int srcY = static_cast<int>((static_cast<float>(y) / height) * bgHeight);
+
+			// Get the color from the background image
+			int color = bgImageData[srcY * bgWidth + srcX];
+
+			// Write to the background buffer
+			bgBuffer[y * width + x] = Point(static_cast<float>(x), static_cast<float>(y), 1.0f, 1.0f, color);
+		}
+	}
+}
+
+void RepeatBackgroundToBuffer(Point* bgBuffer, int* bgImageData, int bgWidth, int bgHeight, size_t width, size_t height) {
+	for (size_t y = 0; y < height; y++) {
+		for (size_t x = 0; x < width; x++) {
+			// Map screen coordinates to background image coordinates using modulo for repetition
+			int srcX = x % bgWidth;
+			int srcY = y % bgHeight;
+
+			// Get the color from the background image
+			int color = bgImageData[srcY * bgWidth + srcX];
+
+			// Write to the background buffer
+			bgBuffer[y * width + x] = Point(static_cast<float>(x), static_cast<float>(y), 1.0f, 1.0f, color);
+		}
+	}
+}
+
+
+void renderToBitmap(Point* bgBuffer, Point* zBuffer, Point* oBuffer, int width, int height, CDC* pDC) {
+	// Define a DIB (Device-Independent Bitmap) header
+	BITMAPINFO bmi = {};
+	bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bmi.bmiHeader.biWidth = width;
+	bmi.bmiHeader.biHeight = -height; // Negative height for top-down DIB
+	bmi.bmiHeader.biPlanes = 1;
+	bmi.bmiHeader.biBitCount = 32;   // 32-bit color depth
+	bmi.bmiHeader.biCompression = BI_RGB;
+
+	// Create a DIBSection and get a pointer to its pixel data
+	void* pBits = nullptr;
+	HBITMAP hDIB = CreateDIBSection(pDC->GetSafeHdc(), &bmi, DIB_RGB_COLORS, &pBits, nullptr, 0);
+	if (!hDIB) {
+		std::cerr << "Failed to create DIBSection!" << std::endl;
+		return;
+	}
+
+	// Create a memory DC and select the DIB into it
+	CDC memDC;
+	memDC.CreateCompatibleDC(pDC);
+	HBITMAP hOldBitmap = (HBITMAP)SelectObject(memDC.GetSafeHdc(), hDIB);
+
+	// Fill the DIB with the background color
+	COLORREF* pixels = static_cast<COLORREF*>(pBits);
+	for (int y = 0; y < height; ++y) {
+		for (int x = 0; x < width; ++x) {
+			size_t index = y * width + x;
+			COLORREF color = RGB(0, 0, 0); // Default color
+
+			// Background buffer
+			if (bgBuffer && bgBuffer[index].z < FLT_MAX) {
+				color = bgBuffer[index].getColor();
+			}
+			// Z-buffer
+			if (zBuffer && zBuffer[index].z < FLT_MAX) {
+				color = zBuffer[index].getColor();
+			}
+			// Overlay buffer
+			if (oBuffer && oBuffer[index].getColor() != RGB(0, 0, 0)) {
+				color = oBuffer[index].getColor();
+			}
+
+			// Set pixel in the DIB
+			pixels[index] = color;
+		}
+	}
+
+	// Transfer the rendered bitmap to the screen
+	pDC->BitBlt(0, 0, width, height, &memDC, 0, 0, SRCCOPY);
+
+	// Cleanup
+	SelectObject(memDC.GetSafeHdc(), hOldBitmap);
+	DeleteObject(hDIB);
+	memDC.DeleteDC();
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CCGWorkView drawing
 /////////////////////////////////////////////////////////////////////////////
 void CCGWorkView::OnDraw(CDC* pDC) {
 	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
-
 	CCGWorkDoc* pDoc = GetDocument();
 	ASSERT_VALID(pDoc);
 	if (!pDoc) return;
@@ -468,66 +566,70 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 	CRect r;
 	GetClientRect(&r);
 
-	// Use the double-buffered DC to avoid flickering
-	CDC* pDCToUse = m_pDbDC;
-	scene.setColors(pApp->Object_color, RGB(0, 255, 0), pApp->Background_color); // Set colors
-	pDCToUse->FillSolidRect(&r, scene.getBackgroundColor()); // Fill background color
+	// Screen dimensions
+	const int width = r.Width();
+	const int height = r.Height();
 
-	const double screenHeight = static_cast<double>(r.Height());
-	const double screenWidth = static_cast<double>(r.Width());
-	const size_t width = static_cast<size_t>(r.Width());
-	const size_t height = static_cast<size_t>(r.Height());
-	const COLORREF green = RGB(0, 255, 0);
-	Vector4 cameraPosition(screenWidth / 2.0, screenHeight / 2.0, -500.0); // Z position is set to -500 for perspective
+	// Initialize buffers
+	Point* zBuffer = nullptr;
+	Point* oBuffer = nullptr;
+	Point* bgBuffer = nullptr;
+	Vector4 cameraPosition(width / 2.0, height / 2.0, -500.0); // Z position is set to -500 for perspective
 
-	// buffer for the polygon's filling
-	Point* zBuffer = initZBuffer(width, height);
-	//other buffer for normals bounding boxes and wireframe
-	Point* oBuffer = initZBuffer(width, height);
+	// Render conditions
+	if (m_solid_rendering) {
+		zBuffer = initZBuffer(width, height);
+	}
+	if (m_draw_bounding_box || m_draw_poly_normals_from || m_draw_vertex_normals_from || m_draw_poly_normals_not_from || m_draw_vertex_normals_not_from) {
+		oBuffer = initZBuffer(width, height);
+	}
+	if (m_back_ground_image_on) {
+		bgBuffer = initZBuffer(width, height);
+		int* bgImageData = nullptr;
+		int bgWidth = 0, bgHeight = 0;
 
-	// Draw edges, normals, and interiors using Z-buffer
-	if (!scene.getPolygons()->empty()) {
-		for (Poly* poly : *scene.getPolygons()) {
-			const std::vector<Vertex>& vertices = poly->getVertices();
-			COLORREF color = poly->getColor();
-
-			// Convert vertices to Point objects for Z-buffer rendering
-
-			// Render the polygon into the Z-buffer
-			if (m_solid_rendering) {
-				renderPolygon(zBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling);
+		if (scene.getBackgroundImage(bgImageData, bgWidth, bgHeight) && m_back_ground_image_was_set) {
+			if (m_back_ground_image_stretch) {
+				StretchBackgroundToBuffer(bgBuffer, bgImageData, bgWidth, bgHeight, width, height);
 			}
-			// Draw polygon edges and vertex normals
-			DrawPolygonEdgesAndVertexNormals(oBuffer, width, height, poly, cameraPosition, pApp->Object_color, pApp->vertex_normals_color);
-			// Draw polygon normals
-			DrawPolygonNormal(oBuffer, width, height, poly, pApp->poly_normals_color);
-
-		}
-		// Draw bounding box if flag is set
-		if (scene.hasBoundingBox && m_draw_bounding_box) {
-			DrawBoundingBox(oBuffer, width, height, scene.getBoundingBox(), green); // Green for bounding box
-		}
-		if (m_render_to_screen) {//render to screen
-			if (m_solid_rendering) {//if fill the polygons and not just wireframe and normals
-				renderBuffer(height, width, zBuffer, screenHeight, pDCToUse);
+			else {
+				RepeatBackgroundToBuffer(bgBuffer, bgImageData, bgWidth, bgHeight, width, height);
 			}
-			renderBuffer(height, width, oBuffer, screenHeight, pDCToUse);//wire frame normals and bbox
-			if (pDCToUse != m_pDC) {// to screen
-				m_pDC->BitBlt(r.left, r.top, r.Width(), r.Height(), pDCToUse, r.left, r.top, SRCCOPY);
-			}
-		}
-		else {//if not to screen
-			m_render_to_screen = true;
-			saveCombinedBufferToPNG(zBuffer, oBuffer, width, height, "..\\..\\combined_output.png");
 		}
 	}
-	// Cleanup Z-buffer
-	freeZBuffer(zBuffer);
-	freeZBuffer(oBuffer);
 
-	// Copy the double-buffered image to the screen
+	// Render polygons
+	for (Poly* poly : *scene.getPolygons()) {
+		if (m_solid_rendering && zBuffer) {
+			renderPolygon(zBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling);
+		}
+		if (oBuffer) {
+			DrawPolygonEdgesAndVertexNormals(oBuffer, width, height, poly, cameraPosition, pApp->Object_color, pApp->vertex_normals_color);
+			DrawPolygonNormal(oBuffer, width, height, poly, pApp->poly_normals_color);
+		}
+	}
 
+	// Render bounding box if enabled
+	if (scene.hasBoundingBox && m_draw_bounding_box && oBuffer) {
+		DrawBoundingBox(oBuffer, width, height, scene.getBoundingBox(), RGB(0, 255, 0));
+	}
+
+	// Use the optimized renderToBitmap function
+	if (m_render_to_screen) {
+		renderToBitmap(bgBuffer, zBuffer, oBuffer, width, height, pDC);
+	}
+	else {
+		m_render_to_screen = true;
+		saveCombinedBufferToPNG(bgBuffer, zBuffer, oBuffer, width, height, "..\\..\\combined_output.png");
+	}
+
+	// Cleanup buffers
+	if (zBuffer) freeZBuffer(zBuffer);
+	if (oBuffer) freeZBuffer(oBuffer);
+	if (bgBuffer) freeZBuffer(bgBuffer);
 }
+
+
 
 
 
@@ -620,6 +722,72 @@ Matrix4 CCGWorkView::getMatrixToCenterObject() {
 	return t;
 }
 
+void CCGWorkView::OnFileLoadBackGroundImage() {
+	// Open a file dialog to select the PNG file
+	m_back_ground_image_was_set = false;
+	TCHAR szFilters[] = _T("Background Image files (*.PNG)|*.PNG|All Files (*.*)|*.*||");
+	CFileDialog dlg(TRUE, _T("PNG"), _T("*.PNG"), OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, szFilters);
+	if (dlg.DoModal() != IDOK) {
+		return; // User canceled or no file selected
+	}
+
+	CString filePath = dlg.GetPathName(); // Get the selected file's path
+#ifdef UNICODE
+	size_t convertedChars = 0;
+	char charPath[MAX_PATH];
+	wcstombs_s(&convertedChars, charPath, MAX_PATH, filePath, _TRUNCATE);
+#else
+	const char* charPath = filePath.GetString();
+#endif
+
+	// Load the PNG image
+	PngWrapper pngImage(charPath);
+
+	if (!pngImage.ReadPng()) {
+		AfxMessageBox(_T("Failed to load PNG image."));
+		return;
+	}
+
+	// Get image dimensions
+	int width = pngImage.GetWidth();
+	int height = pngImage.GetHeight();
+
+	// Validate dimensions
+	if (width <= 0 || height <= 0) {
+		AfxMessageBox(_T("Invalid image dimensions."));
+		return;
+	}
+
+	// Create an array to store the pixel data
+	std::vector<int> imageData(width * height);
+
+	// Fill the array with pixel data, flipping vertically
+	for (int y = 0; y < height; y++) {
+		for (int x = 0; x < width; x++) {
+			// Flip the image vertically by accessing rows in reverse order
+			int flippedY = height - 1 - y;
+
+			// Get the pixel value
+			int pixel = pngImage.GetValue(x, flippedY);
+
+			// Correct color if needed (convert BGRA to RGBA or other formats)
+			unsigned int r = (pixel >> 16) & 0xFF; // Extract Red
+			unsigned int g = (pixel >> 8) & 0xFF;  // Extract Green
+			unsigned int b = pixel & 0xFF;         // Extract Blue
+			imageData[y * width + x] = (r << 16) | (g << 8) | b; // Repack into RGB
+
+		}
+	}
+
+	// Set the image as the background using scene.setBackgroundImage
+	if (!scene.setBackgroundImage(imageData.data(), width, height)) {
+		AfxMessageBox(_T("Failed to set background image."));
+		return;
+	}
+
+	AfxMessageBox(_T("Background image loaded successfully!"));
+	m_back_ground_image_was_set = true;
+}
 
 
 void CCGWorkView::OnFileLoad() {
@@ -1355,7 +1523,21 @@ void CCGWorkView::OnUpdateSolidRendering(CCmdUI* pCmdUI) {
 	pCmdUI->SetCheck(m_solid_rendering == true);
 }
 
+void CCGWorkView::OnBackGroundImageStretch() {
+	m_back_ground_image_stretch = !m_back_ground_image_stretch;
+}
 
+void CCGWorkView::OnUpdateBackGroundImageStretch(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_back_ground_image_stretch == true);
+}
+
+void CCGWorkView::OnBackGroundImageOn() {
+	m_back_ground_image_on = !m_back_ground_image_on;
+}
+
+void CCGWorkView::OnUpdateBackGroundImageOn(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_back_ground_image_on == true);
+}
 
 
 ////////////polygon finess:

@@ -57,6 +57,7 @@ BOOL MouseSensitivityDlg::OnInitDialog() {
 BEGIN_MESSAGE_MAP(MouseSensitivityDlg, CDialog)
 	ON_WM_HSCROLL()
 	ON_BN_CLICKED(IDC_MOUSEDEFAULTS, &MouseSensitivityDlg::OnDefaultsButtonClicked)
+	ON_BN_CLICKED(IDC_BUTTON1, &MouseSensitivityDlg::OnBnClickedButton1)
 END_MESSAGE_MAP()
 
 
@@ -99,4 +100,9 @@ void MouseSensitivityDlg::OnDefaultsButtonClicked() {
 	R_slider.SetPos(pApp->r_slider_value);
 	pApp->s_slider_value = 5;
 	S_slider.SetPos(pApp->s_slider_value);
+}
+
+void MouseSensitivityDlg::OnBnClickedButton1()
+{
+	// TODO: Add your control notification handler code here
 }
