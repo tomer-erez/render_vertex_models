@@ -2,3 +2,9 @@
 \Release
 /cow.itd
 cow.itd 
+skeleton\bin\*
+skeleton\bin
+skeleton/bin/
+skeleton/bin/*
+
+skeleton/bin/Release
