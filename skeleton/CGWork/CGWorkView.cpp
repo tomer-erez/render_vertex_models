@@ -410,7 +410,7 @@ void CCGWorkView::DrawBoundingBox(Point* oBuffer, size_t width, size_t height, c
 }
 
 
-void saveCombinedBufferToPNG(Point* bgBuffer, Point* zBuffer, Point* oBuffer, size_t width, size_t height, const std::string& filename) {
+void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, size_t width, size_t height, const std::string& filename) {
 	PngWrapper png(filename.c_str(), width, height);
 
 	if (!png.InitWritePng()) {
@@ -424,26 +424,34 @@ void saveCombinedBufferToPNG(Point* bgBuffer, Point* zBuffer, Point* oBuffer, si
 
 			COLORREF color = RGB(0, 0, 0); // Default color
 
-			// Render in the order: bgBuffer -> zBuffer -> oBuffer
+			// Render in the order: bgBuffer -> edgesBuffer -> normalsBuffer -> polygonsBuffer -> boundingBoxBuffer
 			if (bgBuffer && bgBuffer[index].z < FLT_MAX) {
 				color = bgBuffer[index].getColor();
 			}
 
-			if (zBuffer && zBuffer[index].z < FLT_MAX) {
-				color = zBuffer[index].getColor();
+			if (edgesBuffer && edgesBuffer[index].getColor() != RGB(0, 0, 0)) {
+				color = edgesBuffer[index].getColor();
 			}
 
-			if (oBuffer && oBuffer[index].getColor() != RGB(0, 0, 0)) {
-				color = oBuffer[index].getColor();
+			if (normalsBuffer && normalsBuffer[index].getColor() != RGB(0, 0, 0)) {
+				color = normalsBuffer[index].getColor();
 			}
-			
+
+			if (polygonsBuffer && polygonsBuffer[index].z < FLT_MAX) {
+				color = polygonsBuffer[index].getColor();
+			}
+
+			if (boundingBoxBuffer && boundingBoxBuffer[index].getColor() != RGB(0, 0, 0)) {
+				color = boundingBoxBuffer[index].getColor();
+			}
+
+			// Convert COLORREF to RGBA for PngWrapper
 			unsigned int b = GetRValue(color);
 			unsigned int g = GetGValue(color);
 			unsigned int r = GetBValue(color);
 			unsigned int pixelValue = (r << 24) | (g << 16) | (b << 8);
-			
 
-
+			// Set the pixel value in the PngWrapper
 			png.SetValue(static_cast<unsigned int>(x), static_cast<unsigned int>(y), pixelValue);
 		}
 	}
@@ -492,7 +500,7 @@ void RepeatBackgroundToBuffer(Point* bgBuffer, int* bgImageData, int bgWidth, in
 
 
 
-void renderToBitmap(Point* bgBuffer, Point* zBuffer, Point* oBuffer, int width, int height, CDC* pDC) {
+void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, int width, int height, CDC* pDC) {
 	BITMAPINFO bmi = {};
 	bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	bmi.bmiHeader.biWidth = width;
@@ -518,17 +526,25 @@ void renderToBitmap(Point* bgBuffer, Point* zBuffer, Point* oBuffer, int width, 
 			size_t index = y * width + x;
 			COLORREF color = RGB(0, 0, 0); // Default color
 
-			// Background buffer
+			// Render in the order: bgBuffer -> edgesBuffer -> normalsBuffer -> polygonsBuffer -> boundingBoxBuffer
 			if (bgBuffer && bgBuffer[index].z < FLT_MAX) {
 				color = bgBuffer[index].getColor();
 			}
-			// Z-buffer
-			if (zBuffer && zBuffer[index].z < FLT_MAX) {
-				color = zBuffer[index].getColor();
+
+			if (edgesBuffer && edgesBuffer[index].getColor() != RGB(0, 0, 0)) {
+				color = edgesBuffer[index].getColor();
 			}
-			// Overlay buffer
-			if (oBuffer && oBuffer[index].getColor() != RGB(0, 0, 0)) {
-				color = oBuffer[index].getColor();
+
+			if (normalsBuffer && normalsBuffer[index].getColor() != RGB(0, 0, 0)) {
+				color = normalsBuffer[index].getColor();
+			}
+
+			if (polygonsBuffer && polygonsBuffer[index].z < FLT_MAX) {
+				color = polygonsBuffer[index].getColor();
+			}
+
+			if (boundingBoxBuffer && boundingBoxBuffer[index].getColor() != RGB(0, 0, 0)) {
+				color = boundingBoxBuffer[index].getColor();
 			}
 
 			// No conversion needed; buffers already in RGB format
@@ -562,18 +578,14 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 	const int height = r.Height();
 
 	// Initialize buffers
-	Point* zBuffer = nullptr;
-	Point* oBuffer = nullptr;
 	Point* bgBuffer = nullptr;
+	Point* edgesBuffer = nullptr;
+	Point* normalsBuffer = nullptr;
+	Point* polygonsBuffer = nullptr;
+	Point* boundingBoxBuffer = nullptr;
 	Vector4 cameraPosition(width / 2.0, height / 2.0, -500.0); // Z position is set to -500 for perspective
 
-	// Render conditions
-	if (m_solid_rendering) {
-		zBuffer = initZBuffer(width, height);
-	}
-	if (m_draw_bounding_box || m_draw_poly_normals_from || m_draw_vertex_normals_from || m_draw_poly_normals_not_from || m_draw_vertex_normals_not_from) {
-		oBuffer = initZBuffer(width, height);
-	}
+	// Render background
 	if (m_back_ground_image_on) {
 		bgBuffer = initZBuffer(width, height);
 		int* bgImageData = nullptr;
@@ -589,35 +601,59 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 		}
 	}
 
+	// Render edges
+	if (m_draw_poly_normals_from || m_draw_vertex_normals_from || m_draw_vertex_normals_not_from) {
+		edgesBuffer = initZBuffer(width, height);
+	}
+
+	// Render normals
+	if (m_draw_poly_normals_from || m_draw_vertex_normals_from) {
+		normalsBuffer = initZBuffer(width, height);
+	}
+
 	// Render polygons
+	if (m_solid_rendering) {
+		polygonsBuffer = initZBuffer(width, height);
+	}
+
+	// Render bounding box
+	if (m_draw_bounding_box) {
+		boundingBoxBuffer = initZBuffer(width, height);
+	}
+
+	// Process polygons
 	for (Poly* poly : *scene.getPolygons()) {
-		if (m_solid_rendering && zBuffer) {
-			renderPolygon(zBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling);
+		if (m_solid_rendering && polygonsBuffer) {
+			renderPolygon(polygonsBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling);
 		}
-		if (oBuffer) {
-			DrawPolygonEdgesAndVertexNormals(oBuffer, width, height, poly, cameraPosition, pApp->Object_color, pApp->vertex_normals_color);
-			DrawPolygonNormal(oBuffer, width, height, poly, pApp->poly_normals_color);
+		if (edgesBuffer) {
+			DrawPolygonEdgesAndVertexNormals(edgesBuffer, width, height, poly, cameraPosition, pApp->Object_color, pApp->vertex_normals_color);
+		}
+		if (normalsBuffer) {
+			DrawPolygonNormal(normalsBuffer, width, height, poly, pApp->poly_normals_color);
 		}
 	}
 
-	// Render bounding box if enabled
-	if (scene.hasBoundingBox && m_draw_bounding_box && oBuffer) {
-		DrawBoundingBox(oBuffer, width, height, scene.getBoundingBox(), RGB(0, 255, 0));
+	// Draw bounding box if enabled
+	if (scene.hasBoundingBox && m_draw_bounding_box && boundingBoxBuffer) {
+		DrawBoundingBox(boundingBoxBuffer, width, height, scene.getBoundingBox(), RGB(0, 255, 0));
 	}
 
-	// Use the optimized renderToBitmap function
+	// Render to screen or save to file
 	if (m_render_to_screen) {
-		renderToBitmap(bgBuffer, zBuffer, oBuffer, width, height, pDC);
+		renderToBitmap(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, pDC);
 	}
 	else {
 		m_render_to_screen = true;
-		saveCombinedBufferToPNG(bgBuffer, zBuffer, oBuffer, width, height, "..\\..\\combined_output.png");
+		saveCombinedBufferToPNG(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, "..\\..\\combined_output.png");
 	}
 
 	// Cleanup buffers
-	if (zBuffer) freeZBuffer(zBuffer);
-	if (oBuffer) freeZBuffer(oBuffer);
 	if (bgBuffer) freeZBuffer(bgBuffer);
+	if (edgesBuffer) freeZBuffer(edgesBuffer);
+	if (normalsBuffer) freeZBuffer(normalsBuffer);
+	if (polygonsBuffer) freeZBuffer(polygonsBuffer);
+	if (boundingBoxBuffer) freeZBuffer(boundingBoxBuffer);
 }
 
 
