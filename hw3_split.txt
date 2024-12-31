@@ -1,6 +1,6 @@
 to do from hw2:
 
--world space/view space transformations via button: Tomer VVV
+-world space/view space transformations via button: Tomer VVVV
 all we need to change is if the world button is clicked, apply transformation without translating to the 0,0 and back.
 
 -prespective matrix: Matan
@@ -9,37 +9,35 @@ todo
 -tessellation bug: Matan 
 slider resets on new scene, change it
 
--normal calculate for all vertices: Tomer VVV
+-normal calculate for all vertices: Tomer VVVVV
 update the datastructure to have normalFromFIle, and normalCalculated
 in the store data function, compute normals for all vertices, and all polygons
 later in the onDraw, address the flags and draw the right onesa. 
 
-polygon normals: Tomer VVV
+polygon normals: Tomer VVVVVV
 same as the last point.
 
 
 hw3 tasks:
 
-scan conversion: Tomer
+scan conversion: Tomer VVVVVV
 ask in discord how to interpolate colors inside polygons as it seems that the colors of the vertices are always similar
 interpolate normals? is it needed? very difficult to look at a lot of normals inside 1 poly
 fill the polygons with points which have color, normal, depth 
 properties via interpolations from .
 
-z buffer: 
+z buffer: VVVVVV
 maintain a scene's z buffer which, for each pixel, 
 hides the backward surface and shows the front pixel.
 
 light calculation: Matan 
 
-render button: Matan
-
-back face and Silhouette highlighting: Tomer
+back face and Silhouette highlighting: Matan
 update the ds to have a list of vertices, each one points at 2 polygons, each poly has a front/back normal
 then you can highlight silouets
 
 
-flip all normals: Tomer VVV
+flip all normals: Tomer VVVVV
 
-background image: Matan
+background image: Tomer VVVVV
 
