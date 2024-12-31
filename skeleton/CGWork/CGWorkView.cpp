@@ -500,7 +500,7 @@ void RepeatBackgroundToBuffer(Point* bgBuffer, int* bgImageData, int bgWidth, in
 
 
 
-void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, int width, int height, CDC* pDC) {
+void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, int width, int height, CDC* pDC, COLORREF bg_color ) {
 	BITMAPINFO bmi = {};
 	bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	bmi.bmiHeader.biWidth = width;
@@ -524,7 +524,7 @@ void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, P
 	for (int y = 0; y < height; ++y) {
 		for (int x = 0; x < width; ++x) {
 			size_t index = y * width + x;
-			COLORREF color = RGB(0, 0, 0); // Default color
+			COLORREF color = bg_color; // Default color
 
 			// Render in the order: bgBuffer -> edgesBuffer -> normalsBuffer -> polygonsBuffer -> boundingBoxBuffer
 			if (bgBuffer && bgBuffer[index].z < FLT_MAX) {
@@ -578,12 +578,15 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 	const int height = r.Height();
 
 	// Initialize buffers
+
 	Point* bgBuffer = nullptr;
 	Point* edgesBuffer = nullptr;
 	Point* normalsBuffer = nullptr;
 	Point* polygonsBuffer = nullptr;
 	Point* boundingBoxBuffer = nullptr;
 	Vector4 cameraPosition(width / 2.0, height / 2.0, -500.0); // Z position is set to -500 for perspective
+	COLORREF white = RGB(255, 255, 255);
+	COLORREF green = RGB(0, 255, 0);
 
 	// Render background
 	if (m_back_ground_image_on) {
@@ -627,7 +630,7 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 			renderPolygon(polygonsBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling);
 		}
 		if (edgesBuffer) {
-			DrawPolygonEdgesAndVertexNormals(edgesBuffer, width, height, poly, cameraPosition, pApp->Object_color, pApp->vertex_normals_color);
+			DrawPolygonEdgesAndVertexNormals(edgesBuffer, width, height, poly, cameraPosition, white, pApp->vertex_normals_color);
 		}
 		if (normalsBuffer) {
 			DrawPolygonNormal(normalsBuffer, width, height, poly, pApp->poly_normals_color);
@@ -636,12 +639,12 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 
 	// Draw bounding box if enabled
 	if (scene.hasBoundingBox && m_draw_bounding_box && boundingBoxBuffer) {
-		DrawBoundingBox(boundingBoxBuffer, width, height, scene.getBoundingBox(), RGB(0, 255, 0));
+		DrawBoundingBox(boundingBoxBuffer, width, height, scene.getBoundingBox(), green);
 	}
 
 	// Render to screen or save to file
 	if (m_render_to_screen) {
-		renderToBitmap(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, pDC);
+		renderToBitmap(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, pDC, pApp->Background_color);
 	}
 	else {
 		m_render_to_screen = true;

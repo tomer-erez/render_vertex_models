@@ -7,7 +7,7 @@ all we need to change is if the world button is clicked, apply transformation wi
 todo
 
 -tessellation bug: Matan 
-slider resets on new scene, change it
+slider resets on new scene, change it and make sure applies for new data 
 
 -normal calculate for all vertices: Tomer VVVVV
 update the datastructure to have normalFromFIle, and normalCalculated
@@ -26,7 +26,7 @@ interpolate normals? is it needed? very difficult to look at a lot of normals in
 fill the polygons with points which have color, normal, depth 
 properties via interpolations from .
 
-z buffer: VVVVVV
+z buffer: Tomer VVVVVV
 maintain a scene's z buffer which, for each pixel, 
 hides the backward surface and shows the front pixel.
 
@@ -36,6 +36,7 @@ silhouette highlighting: Matan
 update the ds to have a list of vertices, each one points at 2 polygons, each poly has a front/back normal
 then you can highlight silouets
 
+wireframe not prominent enough:
 
 flip all normals: Tomer VVVVV
 
