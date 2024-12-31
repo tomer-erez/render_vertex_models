@@ -32,7 +32,7 @@ hides the backward surface and shows the front pixel.
 
 light calculation: Matan 
 
-back face and Silhouette highlighting: Matan
+silhouette highlighting: Matan
 update the ds to have a list of vertices, each one points at 2 polygons, each poly has a front/back normal
 then you can highlight silouets
 
