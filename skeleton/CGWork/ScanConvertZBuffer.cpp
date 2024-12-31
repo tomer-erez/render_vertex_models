@@ -51,7 +51,7 @@ void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& poly
 
         // Compute the view vector (from the polygon to the camera)
         Vector4 viewVector = (cameraPosition - v0).normalize();
-
+        
         // Perform back-face culling
         if (normal.dot(viewVector) < 0) {
             return; // Back face: skip rendering this polygon
