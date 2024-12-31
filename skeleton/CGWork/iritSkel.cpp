@@ -146,11 +146,9 @@ bool CGSkelStoreData(IPObjectStruct* PObj) {//we are calling this func once per 
 	}
 
 	// Retrieve object color
-	COLORREF polyColor = RGB(255, 255, 255); // Default to white
+	COLORREF polyColor = RGB(220, 220, 220); // Default to white
 	if (CGSkelGetObjectColor(PObj, RGB)) {
-		polyColor = RGB(static_cast<int>(RGB[0] * 255),
-			static_cast<int>(RGB[1] * 255),
-			static_cast<int>(RGB[2] * 255));
+		polyColor = RGB(static_cast<int>(RGB[0] * 255),static_cast<int>(RGB[1] * 255),static_cast<int>(RGB[2] * 255));
 	}
 
 	if (CGSkelGetObjectTransp(PObj, &Transp)) {

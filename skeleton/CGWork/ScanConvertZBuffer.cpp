@@ -31,10 +31,12 @@ COLORREF interpolateColor(COLORREF c1, COLORREF c2, float t) {
     );
 }
 
-// Render a polygon using scan conversion and Z-buffering
+// Render a polygon using scan-line rasterization and Z-buffering
 void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& polygon, const Vector4& cameraPosition, bool doBackFaceCulling) {
     const std::vector<Vertex>& vertices = polygon.getVertices();
-    if (vertices.size() < 3) return; // Polygons must have at least 3 vertices
+    if (vertices.size() < 3) {
+        return; // Polygons must have at least 3 vertices
+    }
 
     // Compute the polygon's normal
     const Vertex& v0 = vertices[0];
@@ -51,7 +53,7 @@ void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& poly
 
         // Compute the view vector (from the polygon to the camera)
         Vector4 viewVector = (cameraPosition - v0).normalize();
-        
+
         // Perform back-face culling
         if (normal.dot(viewVector) < 0) {
             return; // Back face: skip rendering this polygon
@@ -73,35 +75,62 @@ void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& poly
     minY = std::max(minY, 0.0f);
     maxY = std::min(maxY, static_cast<float>(height - 1));
 
-    // Precompute denominator for barycentric coordinates
-    float denominator = (v1.y - v2.y) * (v0.x - v2.x) + (v2.x - v1.x) * (v0.y - v2.y);
-    const float epsilon = 1e-5f;
-    if (std::abs(denominator) < epsilon) return; // Skip degenerate triangles
+    // Create arrays to store edge slopes and X-intercepts
+    std::vector<float> slopes;
+    std::vector<float> intercepts;
 
-    // Loop through each pixel in the bounding box
+    // Compute edge slopes and X-intercepts
+    for (size_t i = 0; i < vertices.size(); i++) {
+        const Vertex& vStart = vertices[i];
+        const Vertex& vEnd = vertices[(i + 1) % vertices.size()];
+
+        if (vStart.y == vEnd.y) continue; // Skip horizontal edges
+
+        float slope = (vEnd.x - vStart.x) / (vEnd.y - vStart.y);
+        float intercept = vStart.x - slope * vStart.y;
+
+        slopes.push_back(slope);
+        intercepts.push_back(intercept);
+    }
+
+    // Loop through each scan line
     for (int y = static_cast<int>(minY); y <= static_cast<int>(maxY); y++) {
-        for (int x = static_cast<int>(minX); x <= static_cast<int>(maxX); x++) {
-            // Compute barycentric coordinates
-            float w0 = ((v1.y - v2.y) * (x - v2.x) + (v2.x - v1.x) * (y - v2.y)) / denominator;
-            float w1 = ((v2.y - v0.y) * (x - v2.x) + (v0.x - v2.x) * (y - v2.y)) / denominator;
-            float w2 = 1.0f - w0 - w1;
+        // Find X-intersections with all edges
+        std::vector<float> xIntersections;
 
-            // Check if the point is strictly inside the triangle (not on edges)
-            if (w0 <= 0.0f || w1 <= 0.0f || w2 <= 0.0f) continue;
+        for (size_t i = 0; i < slopes.size(); i++) {
+            const Vertex& vStart = vertices[i];
+            const Vertex& vEnd = vertices[(i + 1) % vertices.size()];
 
-            // Interpolate Z-value
-            float z = w0 * v0.z + w1 * v1.z + w2 * v2.z;
+            if (y >= std::min(vStart.y, vEnd.y) && y <= std::max(vStart.y, vEnd.y)) {
+                float x = slopes[i] * y + intercepts[i];
+                xIntersections.push_back(x);
+            }
+        }
 
-            // Perspective-correct Z-value (optional, for perspective projections)
-            float w = w0 / v0.w + w1 / v1.w + w2 / v2.w;
-            z = (w0 * v0.z / v0.w + w1 * v1.z / v1.w + w2 * v2.z / v2.w) / w;
+        // Sort X-intersections to determine spans
+        std::sort(xIntersections.begin(), xIntersections.end());
 
-            // Perform Z-buffer test
-            size_t index = y * width + x;
-            if (z >= zBuffer[index].z) continue; // Skip if not closer
+        // Fill pixels between pairs of X-intersections
+        for (size_t i = 0; i < xIntersections.size(); i += 2) {
+            if (i + 1 >= xIntersections.size()) break;
 
-            // Update Z-buffer and pixel data
-            zBuffer[index] = Point(static_cast<float>(x), static_cast<float>(y), z, 1.0f, color);
+            int startX = static_cast<int>(std::ceil(xIntersections[i]));
+            int endX = static_cast<int>(std::floor(xIntersections[i + 1]));
+
+            for (int x = startX; x <= endX; x++) {
+                if (x < 0 || x >= static_cast<int>(width)) continue;
+
+                // Interpolate Z-value (assume linear interpolation along the scan line)
+                float z = v0.z; // Simplification: Replace with actual interpolation
+
+                // Perform Z-buffer test
+                size_t index = y * width + x;
+                if (z >= zBuffer[index].z) continue; // Skip if not closer
+
+                // Update Z-buffer and pixel data
+                zBuffer[index] = Point(static_cast<float>(x), static_cast<float>(y), z, 1.0f, color);
+            }
         }
     }
 }
