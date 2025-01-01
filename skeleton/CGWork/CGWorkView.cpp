@@ -500,11 +500,11 @@ void RepeatBackgroundToBuffer(Point* bgBuffer, int* bgImageData, int bgWidth, in
 
 
 
-void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, int width, int height, CDC* pDC, COLORREF bg_color ) {
+void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, int width, int height, CDC* pDC, COLORREF bg_color) {
 	BITMAPINFO bmi = {};
 	bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	bmi.bmiHeader.biWidth = width;
-	bmi.bmiHeader.biHeight = -height; // Negative height for top-down DIB
+	bmi.bmiHeader.biHeight = -height; // Negative for top-down DIB
 	bmi.bmiHeader.biPlanes = 1;
 	bmi.bmiHeader.biBitCount = 32;   // 32-bit color depth
 	bmi.bmiHeader.biCompression = BI_RGB;
@@ -521,12 +521,13 @@ void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, P
 	HBITMAP hOldBitmap = (HBITMAP)SelectObject(memDC.GetSafeHdc(), hDIB);
 
 	COLORREF* pixels = static_cast<COLORREF*>(pBits);
+
 	for (int y = 0; y < height; ++y) {
 		for (int x = 0; x < width; ++x) {
 			size_t index = y * width + x;
-			COLORREF color = bg_color; // Default color
+			COLORREF color = bg_color; // Default background color
 
-			// Render in the order: bgBuffer -> edgesBuffer -> normalsBuffer -> polygonsBuffer -> boundingBoxBuffer
+			// Render buffers in the correct order of priority
 			if (bgBuffer && bgBuffer[index].z < FLT_MAX) {
 				color = bgBuffer[index].getColor();
 			}
@@ -534,24 +535,22 @@ void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, P
 			if (edgesBuffer && edgesBuffer[index].getColor() != RGB(0, 0, 0)) {
 				color = edgesBuffer[index].getColor();
 			}
-
+			if (polygonsBuffer && polygonsBuffer[index].z < FLT_MAX) { // Polygons take priority
+				color = polygonsBuffer[index].getColor();
+			}
 			if (normalsBuffer && normalsBuffer[index].getColor() != RGB(0, 0, 0)) {
 				color = normalsBuffer[index].getColor();
-			}
-
-			if (polygonsBuffer && polygonsBuffer[index].z < FLT_MAX) {
-				color = polygonsBuffer[index].getColor();
 			}
 
 			if (boundingBoxBuffer && boundingBoxBuffer[index].getColor() != RGB(0, 0, 0)) {
 				color = boundingBoxBuffer[index].getColor();
 			}
 
-			// No conversion needed; buffers already in RGB format
-			pixels[index] = color;
+			pixels[index] = color; // Assign the final color
 		}
 	}
 
+	// Render the bitmap to the device context
 	pDC->BitBlt(0, 0, width, height, &memDC, 0, 0, SRCCOPY);
 
 	SelectObject(memDC.GetSafeHdc(), hOldBitmap);
