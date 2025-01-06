@@ -115,7 +115,7 @@ void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& poly
                 // Perform Z-buffer test
                 size_t index = y * width + x;
                 if (z < zBuffer[index].z) {
-                    zBuffer[index] = Point(static_cast<float>(x), static_cast<float>(y), z, 1.0f, color);
+                    zBuffer[index] = Point(static_cast<float>(x), static_cast<float>(y), z, 1.0f, color,&polygon);
                 }
             }
         }

@@ -18,6 +18,7 @@ using std::endl;
 #include "MouseSensitivityDlg.h"
 #include "PolygonFineness.h"
 #include <thread>
+#include <cmath>
 
 
 #ifdef _DEBUG
@@ -499,9 +500,9 @@ void RepeatBackgroundToBuffer(Point* bgBuffer, int* bgImageData, int bgWidth, in
 	}
 }
 
+int ind = 0;
 
-
-void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, int width, int height, CDC* pDC, COLORREF bg_color) {
+void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, int width, int height, CDC* pDC, COLORREF bg_color, Vector4 cameraPosition) {
 	BITMAPINFO bmi = {};
 	bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	bmi.bmiHeader.biWidth = width;
@@ -541,7 +542,58 @@ void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, P
 			}
 			if (polygonsBuffer && polygonsBuffer[index].z < FLT_MAX) { // Polygons take priority
 
-				color = polygonsBuffer[index].getColor();
+				COLORREF baseColor = polygonsBuffer[index].getColor();
+				int baseR = GetRValue(baseColor);
+				int baseG = GetGValue(baseColor);
+				int baseB = GetBValue(baseColor);
+
+				// Ambient lighting
+				int r = static_cast<int>(cApp->m_ambientLight.colorR * cApp->m_lMaterialAmbient * baseR);
+				int g = static_cast<int>(cApp->m_ambientLight.colorG * cApp->m_lMaterialAmbient * baseG);
+				int b = static_cast<int>(cApp->m_ambientLight.colorB * cApp->m_lMaterialAmbient * baseB);
+				const Poly* p = polygonsBuffer[index].getPolygon();
+				Normal n = p->getNormal();
+				Vector4 normal = n.getVector().normalize();
+				Vector4 viewDir = (cameraPosition - n.getVector()).normalize();
+
+				for (int i = LIGHT_ID_1; i < MAX_LIGHT; i++) {
+					if (cApp->m_lights[i].enabled) {
+						Vector4 dir(cApp->m_lights[i].dirX, cApp->m_lights[i].dirY, cApp->m_lights[i].dirZ);
+						Vector4 pos(cApp->m_lights[i].posX, cApp->m_lights[i].posY, cApp->m_lights[i].posZ);
+						Vector4 lightDir = (dir - pos).normalize(); // Ensure normalized light direction
+
+						
+
+						//DrawLineHelper(polygonsBuffer, width, height, pos, dir, RGB(255, 0, 0));
+
+						double cosTheta = max(0.0, normal.dot(lightDir)); // Cosine of angle (clamp to avoid negative values)
+						double diffuse = cApp->m_lMaterialDiffuse;
+
+						// Add diffuse contribution
+						r += static_cast<int>(cApp->m_lights[i].colorR * diffuse * cosTheta);
+						g += static_cast<int>(cApp->m_lights[i].colorG * diffuse * cosTheta);
+						b += static_cast<int>(cApp->m_lights[i].colorB * diffuse * cosTheta);
+
+						// Specular lighting (Blinn-Phong)
+						Vector4 halfwayDir = (lightDir + viewDir).normalize();
+						double specAngle = max(0.0, normal.dot(halfwayDir)); // Clamp to [0, 1]
+						double specular = cApp->m_lMaterialShininess * pow(specAngle, cApp->m_lMaterialSpecular);
+
+						r += static_cast<int>(cApp->m_lights[i].colorR * specular);
+						g += static_cast<int>(cApp->m_lights[i].colorG * specular);
+						b += static_cast<int>(cApp->m_lights[i].colorB * specular);
+					}
+				}
+
+				// Clamp final color values
+				r = std::min(255, r);
+				g = std::min(255, g);
+				b = std::min(255, b);
+
+				color = RGB(r, g, b);
+
+
+			/*	color = polygonsBuffer[index].getColor();
 
 				//COLORREF I_a = RGB(cApp->m_ambientLight.colorR * cApp->m_lMaterialAmbient * GetRValue(color), cApp->m_ambientLight.colorG * cApp->m_lMaterialAmbient * GetGValue(color), cApp->m_ambientLight.colorB * cApp->m_lMaterialAmbient * GetBValue(color));
 				//int tmp_r= GetRValue(color);
@@ -550,21 +602,22 @@ void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, P
 				//int b = cApp->m_ambientLight.colorB * cApp->m_lMaterialAmbient * GetBValue(color);
 				
 		
-				int r = cApp->m_ambientLight.colorR * GetRValue(color);
-				int g = cApp->m_ambientLight.colorG * GetGValue(color);
-				int b = cApp->m_ambientLight.colorB * GetBValue(color);
-				r = r / 255.0f;
-				g = g / 255.0f;
-				b = b / 255.0f;
-
+				int r = cApp->m_ambientLight.colorR;// *GetRValue(color);
+				int g = cApp->m_ambientLight.colorG;// *GetGValue(color);
+				int b = cApp->m_ambientLight.colorB;// *GetBValue(color);
+				//r = r / 255.0f;
+				//g = g / 255.0f;
+				//b = b / 255.0f;
+				
 				//if (r >= 255) r = 255;
 				//if (g >= 255) g = 255;
 				//if (b >= 255) b = 255;
 				r = r * cApp->m_lMaterialAmbient;
 				g = g * cApp->m_lMaterialAmbient;
 				b = b * cApp->m_lMaterialAmbient;
+				COLORREF tmp = RGB(r, g, b);
 
-/*
+
 				for (int i = LIGHT_ID_1; i < MAX_LIGHT; i++)
 				{
 					if (cApp->m_lights[i].enabled)
@@ -573,16 +626,35 @@ void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, P
 						Vector4 pos(cApp->m_lights[i].posX, cApp->m_lights[i].posY, cApp->m_lights[i].posZ);
 						Vector4 light = dir - pos;
 						const Poly* p = polygonsBuffer[index].getPolygon();
+						if (p == nullptr) break;
 						Normal n = p->getNormal();
-						Vector4 normal = n.getVector().normalize();
-						r = r + cApp->m_lights[i].colorR * cApp->m_lMaterialDiffuse * normal.dot(light.normalize());
-						g = g + cApp->m_lights[i].colorG * cApp->m_lMaterialDiffuse * normal.dot(light.normalize());
-						b = b + cApp->m_lights[i].colorB * cApp->m_lMaterialDiffuse * normal.dot(light.normalize());
+						Vector4 normal = n.getVector();
+						double diffuse = cApp->m_lMaterialDiffuse;
+						double cos = std::cos(normal.angle(light));
+						r = r + cApp->m_lights[i].colorR * diffuse * cos;
+						g = g + cApp->m_lights[i].colorG * diffuse * cos;
+						b = b + cApp->m_lights[i].colorB * diffuse * cos;
+						
+						if (r >= 255) r = 255;
+						if (g >= 255) g = 255;
+						if (b >= 255) b = 255;
+
+						color = RGB(r, g, b);
+
+						//CString str;
+						//str.Format(_T("base color = ( %d , %d , %d ), light color ( %d , %d , %d ), result = ( %d , %d , %d ), final color ( %d , %d , %d ), cos = %0.3f, ind= %d\n"), GetRValue(tmp), GetGValue(tmp), GetBValue(tmp), cApp->m_lights[i].colorR, cApp->m_lights[i].colorG, cApp->m_lights[i].colorB, r, g, b, GetRValue(color), GetGValue(color), GetBValue(color), cos,ind);
+						//STATUS_BAR_TEXT(str);
 					}
 				}
 
-				*/
+				
+				//COLORREF tmp = color;
 				color = RGB(r, g, b);
+
+				//CString str;
+				//str.Format(_T("base color = ( %d , %d , %d ), light color ( %d , %d , %d ), result = ( %d , %d , %d ), final color ( %d , %d , %d ), cos = %0.3f\n"), GetRValue(tmp), GetGValue(tmp), GetBValue(tmp), cApp->m_ambientLight.colorR, cApp->m_ambientLight.colorG, cApp->m_ambientLight.colorB, r, g, b, GetRValue(color), GetGValue(color), GetBValue(color), normal.dot(light.normalize());
+				//STATUS_BAR_TEXT(str);
+				*/
 			}
 			if (normalsBuffer && normalsBuffer[index].getColor() != RGB(0, 0, 0)) {
 				color = normalsBuffer[index].getColor();
@@ -610,6 +682,12 @@ void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, P
 // CCGWorkView drawing
 /////////////////////////////////////////////////////////////////////////////
 void CCGWorkView::OnDraw(CDC* pDC) {
+
+	CString str;
+	str.Format(_T("onDraw on the %d time   \n"),ind++ );
+	STATUS_BAR_TEXT(str);
+
+
 	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
 	CCGWorkDoc* pDoc = GetDocument();
 	ASSERT_VALID(pDoc);
@@ -689,7 +767,7 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 
 	// Render to screen or save to file
 	if (m_render_to_screen) {
-		renderToBitmap(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, pDC, pApp->Background_color);
+		renderToBitmap(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, pDC, pApp->Background_color,cameraPosition);
 	}
 	else {
 		m_render_to_screen = true;
@@ -1263,9 +1341,9 @@ void CCGWorkView::OnMouseMove(UINT nFlags, CPoint point)
 
 		int diffrence = prev_start.x - point.x;
 		prev_start = point;
-		CString str;
+		//CString str;
 		//str.Format(_T("raw diff= %d calculated diff %d\n"), diffrence, diffrence / MOUSE_FACTOR);
-		STATUS_BAR_TEXT(str);
+		//STATUS_BAR_TEXT(str);
 		diffrence = diffrence / MOUSE_FACTOR;
 
 		MapMouseMovement(diffrence);
@@ -1273,9 +1351,9 @@ void CCGWorkView::OnMouseMove(UINT nFlags, CPoint point)
 
 	}
 
-	CString str;
-	str.Format(_T("mouse position = ( %d , %d )\n"), point.x, point.y);
-	STATUS_BAR_TEXT(str);
+	//CString str;
+	//str.Format(_T("mouse position = ( %d , %d )\n"), point.x, point.y);
+	//STATUS_BAR_TEXT(str);
 
 	CView::OnMouseMove(nFlags, point);
 }

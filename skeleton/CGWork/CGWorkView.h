@@ -150,6 +150,7 @@ private:
 	void OnSolidRendering();
 	void OnBackGroundImageStretch();
 	void OnBackGroundImageOn();
+	void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, int width, int height, CDC* pDC, COLORREF bg_color, Vector4 cameraPosition);
 protected:
 	//{{AFX_MSG(CCGWorkView)
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
