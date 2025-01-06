@@ -543,14 +543,14 @@ void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* nor
 			if (polygonsBuffer && polygonsBuffer[index].z < FLT_MAX) { // Polygons take priority
 
 				COLORREF baseColor = polygonsBuffer[index].getColor();
-				int baseR = GetRValue(baseColor);
+				int baseB = GetRValue(baseColor);
 				int baseG = GetGValue(baseColor);
-				int baseB = GetBValue(baseColor);
+				int baseR = GetBValue(baseColor);
 
 				// Ambient lighting
-				int r = static_cast<int>(cApp->m_ambientLight.colorR * cApp->m_lMaterialAmbient * baseR);
-				int g = static_cast<int>(cApp->m_ambientLight.colorG * cApp->m_lMaterialAmbient * baseG);
-				int b = static_cast<int>(cApp->m_ambientLight.colorB * cApp->m_lMaterialAmbient * baseB);
+				int r = static_cast<int>(cApp->m_ambientLight.colorR * cApp->m_lMaterialAmbient * baseR/255);
+				int g = static_cast<int>(cApp->m_ambientLight.colorG * cApp->m_lMaterialAmbient * baseG/255);
+				int b = static_cast<int>(cApp->m_ambientLight.colorB * cApp->m_lMaterialAmbient * baseB/255);
 				const Poly* p = polygonsBuffer[index].getPolygon();
 				Normal n = p->getNormal();
 				Vector4 normal = n.getVector().normalize();
@@ -560,7 +560,7 @@ void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* nor
 					if (cApp->m_lights[i].enabled) {
 						Vector4 dir(cApp->m_lights[i].dirX, cApp->m_lights[i].dirY, cApp->m_lights[i].dirZ);
 						Vector4 pos(cApp->m_lights[i].posX, cApp->m_lights[i].posY, cApp->m_lights[i].posZ);
-						Vector4 lightDir = (dir - pos).normalize(); // Ensure normalized light direction
+						Vector4 lightDir = (pos-dir).normalize(); // Ensure normalized light direction
 
 						
 
@@ -863,11 +863,14 @@ Matrix4 CCGWorkView::getMatrixToCenterObject() {
 	Matrix4 t; // Starts as the identity matrix
 
 	const Matrix4 translateToOrigin = Matrix4::translate(-center.x, -center.y, -center.z);
+	const Matrix4 rotate = Matrix4::rotateX(180);
 	const Matrix4 scaling = Matrix4::scale(sceneScale, sceneScale, sceneScale);
 	const Matrix4 translateToScreen = Matrix4::translate(screenWidth / 2.0, screenHeight / 2.0, 0.0);
 
 	// Translate to origin (center the scene)
 	t = t * translateToScreen;
+
+	t = t * rotate;
 	// Scale the scene to fit within the target screen area
 	t = t * scaling;
 	// Translate to the screen center
