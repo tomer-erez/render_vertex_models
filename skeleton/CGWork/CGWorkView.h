@@ -67,6 +67,9 @@ public:
 	LightParams m_lights[MAX_LIGHT];	//configurable lights array
 	LightParams m_ambientLight;		//ambient light (only RGB is used)
 	CPoint prev_start;
+	
+	bool m_directional_light;
+	bool m_positional_light;
 
 
 	// Overrides
@@ -217,6 +220,8 @@ protected:
 	afx_msg void OnVertexNormalsNotFrom();
 	afx_msg void OnUpdateVertexNormalsNotFrom(CCmdUI* pCmdUI);
 
+	afx_msg void OnPositionalLight();
+	afx_msg void OnUpdatePositionalLight(CCmdUI* pCmdUI);
 
 	afx_msg void OnViewObject();
 	afx_msg void OnViewView();

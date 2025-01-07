@@ -73,6 +73,10 @@ float Vector4::distance(const Vector4& v) const {
     return (*this - v).magnitude();
 }
 
+Vector4 Vector4::flip() const {
+    return Vector4(-x, -y, -z, w);  // Flip this vector
+}
+
 // Set coordinates
 void Vector4::set(float newX, float newY, float newZ) {
     x = newX;

@@ -193,7 +193,7 @@ CCGWorkView::CCGWorkView()
 
 	m_nLightShading = ID_LIGHT_SHADING_FLAT;
 	m_solid_rendering = true;
-	m_lMaterialAmbient = 0.2;
+	m_lMaterialAmbient = 0.6;
 	m_lMaterialDiffuse = 0.8;
 	m_lMaterialSpecular = 1.0;
 	m_nMaterialCosineFactor = 32;
@@ -411,63 +411,127 @@ void CCGWorkView::DrawBoundingBox(Point* oBuffer, size_t width, size_t height, c
 	}
 }
 
-COLORREF flat_lights(Point* polygonsBuffer, int index, Vector4 cameraPosition)
-{
-	CCGWorkView* pApp = (CCGWorkView*)AfxGetApp();
-	CCGWorkApp* cApp = (CCGWorkApp*)AfxGetApp();
-	COLORREF baseColor = polygonsBuffer[index].getColor();
-	int baseB = GetRValue(baseColor);
+COLORREF shade_polygon(const Poly* p, COLORREF baseColor, Vector4 cameraPosition, bool isFlatShading) {
+	CCGWorkApp* cApp = (CCGWorkApp*)AfxGetApp();  // Access the application instance
+
+	int baseB = GetBValue(baseColor);
 	int baseG = GetGValue(baseColor);
-	int baseR = GetBValue(baseColor);
+	int baseR = GetRValue(baseColor);
 
-	// Ambient lighting
-	int r = static_cast<int>(cApp->m_ambientLight.colorR * cApp->m_lMaterialAmbient * baseR / 255);
-	int g = static_cast<int>(cApp->m_ambientLight.colorG * cApp->m_lMaterialAmbient * baseG / 255);
-	int b = static_cast<int>(cApp->m_ambientLight.colorB * cApp->m_lMaterialAmbient * baseB / 255);
-	const Poly* p = polygonsBuffer[index].getPolygon();
-	Normal n = p->getNormal();
-	Vector4 normal = n.getVector().normalize();
-	Vector4 viewDir = (cameraPosition - n.getVector()).normalize();
-
-	for (int i = LIGHT_ID_1; i < MAX_LIGHT; i++) {
-		if (cApp->m_lights[i].enabled) {
-			Vector4 dir(cApp->m_lights[i].dirX, cApp->m_lights[i].dirY, cApp->m_lights[i].dirZ);
-			Vector4 pos(cApp->m_lights[i].posX, cApp->m_lights[i].posY, cApp->m_lights[i].posZ);
-			Vector4 lightDir = (pos - dir).normalize(); // Ensure normalized light direction
-
-
-
-			//DrawLineHelper(polygonsBuffer, width, height, pos, dir, RGB(255, 0, 0));
-
-			double cosTheta = max(0.0, normal.dot(lightDir)); // Cosine of angle (clamp to avoid negative values)
-			double diffuse = cApp->m_lMaterialDiffuse;
-
-			// Add diffuse contribution
-			r += static_cast<int>(cApp->m_lights[i].colorR * diffuse * cosTheta);
-			g += static_cast<int>(cApp->m_lights[i].colorG * diffuse * cosTheta);
-			b += static_cast<int>(cApp->m_lights[i].colorB * diffuse * cosTheta);
-
-			// Specular lighting (Blinn-Phong)
-			Vector4 halfwayDir = (lightDir + viewDir).normalize();
-			double specAngle = max(0.0, normal.dot(halfwayDir)); // Clamp to [0, 1]
-			double specular = cApp->m_lMaterialShininess * pow(specAngle, cApp->m_lMaterialSpecular);
-
-			r += static_cast<int>(cApp->m_lights[i].colorR * specular);
-			g += static_cast<int>(cApp->m_lights[i].colorG * specular);
-			b += static_cast<int>(cApp->m_lights[i].colorB * specular);
+	int r, g, b;  // Final RGB values
+	bool affected = false;
+	for (int j = LIGHT_ID_1; j < MAX_LIGHT; j++) {
+		if (cApp->m_lights[j].enabled) {
+			affected = true;
 		}
+	}
+	if (!affected) {
+		return baseColor;
+	}
+	if (isFlatShading) {
+		// **Flat Shading** - Calculate color once for the entire polygon
+		r = static_cast<int>(cApp->m_ambientLight.colorR * cApp->m_lMaterialAmbient * baseR / 255);
+		g = static_cast<int>(cApp->m_ambientLight.colorG * cApp->m_lMaterialAmbient * baseG / 255);
+		b = static_cast<int>(cApp->m_ambientLight.colorB * cApp->m_lMaterialAmbient * baseB / 255);
+
+		Normal n = p->getNormal();
+		Vector4 normal = n.getVector().normalize();
+		Vector4 pointOnSurface = n.getVector();  // Assume normal origin is the point being shaded
+		Vector4 viewDir = (cameraPosition - pointOnSurface).normalize();  // View direction
+
+		// Iterate over lights
+		for (int i = LIGHT_ID_1; i < MAX_LIGHT; i++) {
+			if (cApp->m_lights[i].enabled) {
+				Vector4 dir(cApp->m_lights[i].dirX, cApp->m_lights[i].dirY, cApp->m_lights[i].dirZ);
+				Vector4 pos(cApp->m_lights[i].posX, cApp->m_lights[i].posY, cApp->m_lights[i].posZ);
+				Vector4 lightDir;
+				
+				// Directional or point light handling
+				if (cApp->m_lights[i].type == LIGHT_TYPE_DIRECTIONAL) {
+					lightDir = (dir.flip()).normalize();  // Directional light
+				}
+				else {
+					lightDir = (pos - pointOnSurface).normalize();  // Point light
+				}
+
+				double cosTheta = max(0.0, normal.dot(lightDir));  // Clamp cosine for diffuse
+
+				// Diffuse lighting
+				r += static_cast<int>(cApp->m_lights[i].colorR * cApp->m_lMaterialDiffuse * cosTheta);
+				g += static_cast<int>(cApp->m_lights[i].colorG * cApp->m_lMaterialDiffuse * cosTheta);
+				b += static_cast<int>(cApp->m_lights[i].colorB * cApp->m_lMaterialDiffuse * cosTheta);
+
+				// Specular lighting (Blinn-Phong)
+				Vector4 halfwayDir = (lightDir + viewDir).normalize();
+				double specAngle = max(0.0, normal.dot(halfwayDir));
+				double specular = cApp->m_lMaterialSpecular * pow(specAngle, cApp->m_lMaterialShininess);
+
+				r += static_cast<int>(cApp->m_lights[i].colorR * specular);
+				g += static_cast<int>(cApp->m_lights[i].colorG * specular);
+				b += static_cast<int>(cApp->m_lights[i].colorB * specular);
+			}
+		}
+
+	}
+	else {
+		// **Gouraud Shading** - Calculate color for each vertex and interpolate
+		r = g = b = 0;
+
+		const std::vector<Vertex>& vertices = p->getVertices();  // Change to Vertex instead of Point
+		int numVertices = vertices.size();
+		for (const Vertex& vertex : vertices) {
+			Vector4 normal = vertex.getNormalCalculated().end;
+			Vector4 viewDir = (cameraPosition - vertex).normalize();
+
+			int vertexR = static_cast<int>(cApp->m_ambientLight.colorR * cApp->m_lMaterialAmbient * baseR / 255);
+			int vertexG = static_cast<int>(cApp->m_ambientLight.colorG * cApp->m_lMaterialAmbient * baseG / 255);
+			int vertexB = static_cast<int>(cApp->m_ambientLight.colorB * cApp->m_lMaterialAmbient * baseB / 255);
+
+			for (int i = LIGHT_ID_1; i < MAX_LIGHT; i++) {
+				if (cApp->m_lights[i].enabled) {
+					Vector4 dir(cApp->m_lights[i].dirX, cApp->m_lights[i].dirY, cApp->m_lights[i].dirZ);
+					Vector4 pos(cApp->m_lights[i].posX, cApp->m_lights[i].posY, cApp->m_lights[i].posZ);
+					Vector4 lightDir = (cApp->m_lights[i].type == LIGHT_TYPE_DIRECTIONAL)
+						? (dir.flip()).normalize()
+						: (pos - vertex).normalize();
+
+					double cosTheta = max(0.0, normal.dot(lightDir));
+
+					vertexR += static_cast<int>(cApp->m_lights[i].colorR * cApp->m_lMaterialDiffuse * cosTheta);
+					vertexG += static_cast<int>(cApp->m_lights[i].colorG * cApp->m_lMaterialDiffuse * cosTheta);
+					vertexB += static_cast<int>(cApp->m_lights[i].colorB * cApp->m_lMaterialDiffuse * cosTheta);
+
+					Vector4 halfwayDir = (lightDir + viewDir).normalize();
+					double specAngle = max(0.0, normal.dot(halfwayDir));
+					double specular = cApp->m_lMaterialSpecular * pow(specAngle, cApp->m_lMaterialShininess);
+
+					vertexR += static_cast<int>(cApp->m_lights[i].colorR * specular);
+					vertexG += static_cast<int>(cApp->m_lights[i].colorG * specular);
+					vertexB += static_cast<int>(cApp->m_lights[i].colorB * specular);
+				}
+			}
+
+			// Sum the vertex colors to average them
+			r += vertexR;
+			g += vertexG;
+			b += vertexB;
+		}
+
+		// Average the vertex colors
+		r /= numVertices;
+		g /= numVertices;
+		b /= numVertices;
 	}
 
 	// Clamp final color values
-	r = std::min(255, r);
-	g = std::min(255, g);
-	b = std::min(255, b);
+	r = std::min(255, max(0, r));
+	g = std::min(255, max(0, g));
+	b = std::min(255, max(0, b));
 
 	return RGB(r, g, b);
-
 }
 
-void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, size_t width, size_t height, const std::string& filename, Vector4 cameraPosition, COLORREF bg_color) {
+void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, size_t width, size_t height, const std::string& filename, Vector4 cameraPosition, COLORREF bg_color, bool isFlatShading) {
 	PngWrapper png(filename.c_str(), width, height);
 
 	if (!png.InitWritePng()) {
@@ -495,7 +559,9 @@ void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normals
 			}
 
 			if (polygonsBuffer && polygonsBuffer[index].z < FLT_MAX) {
-				color = flat_lights(polygonsBuffer, index, cameraPosition);
+				const Poly* p = polygonsBuffer[index].getPolygon();  // Pointer to Poly
+				COLORREF baseColor = polygonsBuffer[index].getColor();
+				color = shade_polygon(p, baseColor, cameraPosition, isFlatShading);
 			}
 
 			if (boundingBoxBuffer && boundingBoxBuffer[index].getColor() != RGB(0, 0, 0)) {
@@ -597,8 +663,9 @@ void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* nor
 			}
 			if (polygonsBuffer && polygonsBuffer[index].z < FLT_MAX) { // Polygons take priority
 
-				color = flat_lights(polygonsBuffer, index, cameraPosition);
-
+				const Poly* p = polygonsBuffer[index].getPolygon();  // Pointer to Poly
+				COLORREF baseColor = polygonsBuffer[index].getColor();
+				color = shade_polygon(p, baseColor, cameraPosition, m_nLightShading == ID_LIGHT_SHADING_FLAT);
 			}
 			if (normalsBuffer && normalsBuffer[index].getColor() != RGB(0, 0, 0)) {
 				color = normalsBuffer[index].getColor();
@@ -626,10 +693,17 @@ void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* nor
 // CCGWorkView drawing
 /////////////////////////////////////////////////////////////////////////////
 void CCGWorkView::OnDraw(CDC* pDC) {
-
+	// Get the mouse position
+	POINT point;
+	GetCursorPos(&point);
+	ScreenToClient(&point);  // Convert to client coordinates
 	CString str;
-	str.Format(_T("onDraw on the %d time   \n"),ind++ );
-	STATUS_BAR_TEXT(str);
+	// Log the mouse position to the status bar
+	str.Format(_T("Mouse Position: X = %d, Y = %d"), point.x, point.y);
+	STATUS_BAR_TEXT(str);  // Assuming STATUS_BAR_TEXT sets the status bar text
+
+	//str.Format(_T("onDraw on the %d time   \n"),ind++ );
+	//STATUS_BAR_TEXT(str);
 
 
 	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
@@ -715,7 +789,7 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 	}
 	else {
 		m_render_to_screen = true;
-		saveCombinedBufferToPNG(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, "..\\..\\combined_output.png",cameraPosition, pApp->Background_color);
+		saveCombinedBufferToPNG(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, "..\\..\\combined_output.png",cameraPosition, pApp->Background_color, m_nLightShading == ID_LIGHT_SHADING_FLAT);
 	}
 
 	// Cleanup buffers
@@ -1364,6 +1438,8 @@ void CCGWorkView::ApplyXRotation(int d) {
 	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
 
 	// Create the rotation matrix
+
+
 	Matrix4 r = Matrix4::rotateX(d);
 
 	if (m_is_object_space_transform) {
