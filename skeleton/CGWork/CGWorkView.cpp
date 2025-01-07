@@ -411,8 +411,63 @@ void CCGWorkView::DrawBoundingBox(Point* oBuffer, size_t width, size_t height, c
 	}
 }
 
+COLORREF flat_lights(Point* polygonsBuffer, int index, Vector4 cameraPosition)
+{
+	CCGWorkView* pApp = (CCGWorkView*)AfxGetApp();
+	CCGWorkApp* cApp = (CCGWorkApp*)AfxGetApp();
+	COLORREF baseColor = polygonsBuffer[index].getColor();
+	int baseB = GetRValue(baseColor);
+	int baseG = GetGValue(baseColor);
+	int baseR = GetBValue(baseColor);
 
-void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, size_t width, size_t height, const std::string& filename) {
+	// Ambient lighting
+	int r = static_cast<int>(cApp->m_ambientLight.colorR * cApp->m_lMaterialAmbient * baseR / 255);
+	int g = static_cast<int>(cApp->m_ambientLight.colorG * cApp->m_lMaterialAmbient * baseG / 255);
+	int b = static_cast<int>(cApp->m_ambientLight.colorB * cApp->m_lMaterialAmbient * baseB / 255);
+	const Poly* p = polygonsBuffer[index].getPolygon();
+	Normal n = p->getNormal();
+	Vector4 normal = n.getVector().normalize();
+	Vector4 viewDir = (cameraPosition - n.getVector()).normalize();
+
+	for (int i = LIGHT_ID_1; i < MAX_LIGHT; i++) {
+		if (cApp->m_lights[i].enabled) {
+			Vector4 dir(cApp->m_lights[i].dirX, cApp->m_lights[i].dirY, cApp->m_lights[i].dirZ);
+			Vector4 pos(cApp->m_lights[i].posX, cApp->m_lights[i].posY, cApp->m_lights[i].posZ);
+			Vector4 lightDir = (pos - dir).normalize(); // Ensure normalized light direction
+
+
+
+			//DrawLineHelper(polygonsBuffer, width, height, pos, dir, RGB(255, 0, 0));
+
+			double cosTheta = max(0.0, normal.dot(lightDir)); // Cosine of angle (clamp to avoid negative values)
+			double diffuse = cApp->m_lMaterialDiffuse;
+
+			// Add diffuse contribution
+			r += static_cast<int>(cApp->m_lights[i].colorR * diffuse * cosTheta);
+			g += static_cast<int>(cApp->m_lights[i].colorG * diffuse * cosTheta);
+			b += static_cast<int>(cApp->m_lights[i].colorB * diffuse * cosTheta);
+
+			// Specular lighting (Blinn-Phong)
+			Vector4 halfwayDir = (lightDir + viewDir).normalize();
+			double specAngle = max(0.0, normal.dot(halfwayDir)); // Clamp to [0, 1]
+			double specular = cApp->m_lMaterialShininess * pow(specAngle, cApp->m_lMaterialSpecular);
+
+			r += static_cast<int>(cApp->m_lights[i].colorR * specular);
+			g += static_cast<int>(cApp->m_lights[i].colorG * specular);
+			b += static_cast<int>(cApp->m_lights[i].colorB * specular);
+		}
+	}
+
+	// Clamp final color values
+	r = std::min(255, r);
+	g = std::min(255, g);
+	b = std::min(255, b);
+
+	return RGB(r, g, b);
+
+}
+
+void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, size_t width, size_t height, const std::string& filename, Vector4 cameraPosition, COLORREF bg_color) {
 	PngWrapper png(filename.c_str(), width, height);
 
 	if (!png.InitWritePng()) {
@@ -424,7 +479,7 @@ void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normals
 		for (size_t x = 0; x < width; ++x) {
 			size_t index = y * width + x;
 
-			COLORREF color = RGB(0, 0, 0); // Default color
+			COLORREF color = bg_color; // Default color
 
 			// Render in the order: bgBuffer -> edgesBuffer -> normalsBuffer -> polygonsBuffer -> boundingBoxBuffer
 			if (bgBuffer && bgBuffer[index].z < FLT_MAX) {
@@ -440,7 +495,7 @@ void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normals
 			}
 
 			if (polygonsBuffer && polygonsBuffer[index].z < FLT_MAX) {
-				color = polygonsBuffer[index].getColor();
+				color = flat_lights(polygonsBuffer, index, cameraPosition);
 			}
 
 			if (boundingBoxBuffer && boundingBoxBuffer[index].getColor() != RGB(0, 0, 0)) {
@@ -542,119 +597,8 @@ void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* nor
 			}
 			if (polygonsBuffer && polygonsBuffer[index].z < FLT_MAX) { // Polygons take priority
 
-				COLORREF baseColor = polygonsBuffer[index].getColor();
-				int baseB = GetRValue(baseColor);
-				int baseG = GetGValue(baseColor);
-				int baseR = GetBValue(baseColor);
+				color = flat_lights(polygonsBuffer, index, cameraPosition);
 
-				// Ambient lighting
-				int r = static_cast<int>(cApp->m_ambientLight.colorR * cApp->m_lMaterialAmbient * baseR/255);
-				int g = static_cast<int>(cApp->m_ambientLight.colorG * cApp->m_lMaterialAmbient * baseG/255);
-				int b = static_cast<int>(cApp->m_ambientLight.colorB * cApp->m_lMaterialAmbient * baseB/255);
-				const Poly* p = polygonsBuffer[index].getPolygon();
-				Normal n = p->getNormal();
-				Vector4 normal = n.getVector().normalize();
-				Vector4 viewDir = (cameraPosition - n.getVector()).normalize();
-
-				for (int i = LIGHT_ID_1; i < MAX_LIGHT; i++) {
-					if (cApp->m_lights[i].enabled) {
-						Vector4 dir(cApp->m_lights[i].dirX, cApp->m_lights[i].dirY, cApp->m_lights[i].dirZ);
-						Vector4 pos(cApp->m_lights[i].posX, cApp->m_lights[i].posY, cApp->m_lights[i].posZ);
-						Vector4 lightDir = (pos-dir).normalize(); // Ensure normalized light direction
-
-						
-
-						//DrawLineHelper(polygonsBuffer, width, height, pos, dir, RGB(255, 0, 0));
-
-						double cosTheta = max(0.0, normal.dot(lightDir)); // Cosine of angle (clamp to avoid negative values)
-						double diffuse = cApp->m_lMaterialDiffuse;
-
-						// Add diffuse contribution
-						r += static_cast<int>(cApp->m_lights[i].colorR * diffuse * cosTheta);
-						g += static_cast<int>(cApp->m_lights[i].colorG * diffuse * cosTheta);
-						b += static_cast<int>(cApp->m_lights[i].colorB * diffuse * cosTheta);
-
-						// Specular lighting (Blinn-Phong)
-						Vector4 halfwayDir = (lightDir + viewDir).normalize();
-						double specAngle = max(0.0, normal.dot(halfwayDir)); // Clamp to [0, 1]
-						double specular = cApp->m_lMaterialShininess * pow(specAngle, cApp->m_lMaterialSpecular);
-
-						r += static_cast<int>(cApp->m_lights[i].colorR * specular);
-						g += static_cast<int>(cApp->m_lights[i].colorG * specular);
-						b += static_cast<int>(cApp->m_lights[i].colorB * specular);
-					}
-				}
-
-				// Clamp final color values
-				r = std::min(255, r);
-				g = std::min(255, g);
-				b = std::min(255, b);
-
-				color = RGB(r, g, b);
-
-
-			/*	color = polygonsBuffer[index].getColor();
-
-				//COLORREF I_a = RGB(cApp->m_ambientLight.colorR * cApp->m_lMaterialAmbient * GetRValue(color), cApp->m_ambientLight.colorG * cApp->m_lMaterialAmbient * GetGValue(color), cApp->m_ambientLight.colorB * cApp->m_lMaterialAmbient * GetBValue(color));
-				//int tmp_r= GetRValue(color);
-				//int r = cApp->m_ambientLight.colorR * cApp->m_lMaterialAmbient * GetRValue(color);
-				//int g = cApp->m_ambientLight.colorG * cApp->m_lMaterialAmbient * GetGValue(color);
-				//int b = cApp->m_ambientLight.colorB * cApp->m_lMaterialAmbient * GetBValue(color);
-				
-		
-				int r = cApp->m_ambientLight.colorR;// *GetRValue(color);
-				int g = cApp->m_ambientLight.colorG;// *GetGValue(color);
-				int b = cApp->m_ambientLight.colorB;// *GetBValue(color);
-				//r = r / 255.0f;
-				//g = g / 255.0f;
-				//b = b / 255.0f;
-				
-				//if (r >= 255) r = 255;
-				//if (g >= 255) g = 255;
-				//if (b >= 255) b = 255;
-				r = r * cApp->m_lMaterialAmbient;
-				g = g * cApp->m_lMaterialAmbient;
-				b = b * cApp->m_lMaterialAmbient;
-				COLORREF tmp = RGB(r, g, b);
-
-
-				for (int i = LIGHT_ID_1; i < MAX_LIGHT; i++)
-				{
-					if (cApp->m_lights[i].enabled)
-					{
-						Vector4 dir(cApp->m_lights[i].dirX, cApp->m_lights[i].dirY, cApp->m_lights[i].dirZ);
-						Vector4 pos(cApp->m_lights[i].posX, cApp->m_lights[i].posY, cApp->m_lights[i].posZ);
-						Vector4 light = dir - pos;
-						const Poly* p = polygonsBuffer[index].getPolygon();
-						if (p == nullptr) break;
-						Normal n = p->getNormal();
-						Vector4 normal = n.getVector();
-						double diffuse = cApp->m_lMaterialDiffuse;
-						double cos = std::cos(normal.angle(light));
-						r = r + cApp->m_lights[i].colorR * diffuse * cos;
-						g = g + cApp->m_lights[i].colorG * diffuse * cos;
-						b = b + cApp->m_lights[i].colorB * diffuse * cos;
-						
-						if (r >= 255) r = 255;
-						if (g >= 255) g = 255;
-						if (b >= 255) b = 255;
-
-						color = RGB(r, g, b);
-
-						//CString str;
-						//str.Format(_T("base color = ( %d , %d , %d ), light color ( %d , %d , %d ), result = ( %d , %d , %d ), final color ( %d , %d , %d ), cos = %0.3f, ind= %d\n"), GetRValue(tmp), GetGValue(tmp), GetBValue(tmp), cApp->m_lights[i].colorR, cApp->m_lights[i].colorG, cApp->m_lights[i].colorB, r, g, b, GetRValue(color), GetGValue(color), GetBValue(color), cos,ind);
-						//STATUS_BAR_TEXT(str);
-					}
-				}
-
-				
-				//COLORREF tmp = color;
-				color = RGB(r, g, b);
-
-				//CString str;
-				//str.Format(_T("base color = ( %d , %d , %d ), light color ( %d , %d , %d ), result = ( %d , %d , %d ), final color ( %d , %d , %d ), cos = %0.3f\n"), GetRValue(tmp), GetGValue(tmp), GetBValue(tmp), cApp->m_ambientLight.colorR, cApp->m_ambientLight.colorG, cApp->m_ambientLight.colorB, r, g, b, GetRValue(color), GetGValue(color), GetBValue(color), normal.dot(light.normalize());
-				//STATUS_BAR_TEXT(str);
-				*/
 			}
 			if (normalsBuffer && normalsBuffer[index].getColor() != RGB(0, 0, 0)) {
 				color = normalsBuffer[index].getColor();
@@ -771,7 +715,7 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 	}
 	else {
 		m_render_to_screen = true;
-		saveCombinedBufferToPNG(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, "..\\..\\combined_output.png");
+		saveCombinedBufferToPNG(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, "..\\..\\combined_output.png",cameraPosition, pApp->Background_color);
 	}
 
 	// Cleanup buffers
