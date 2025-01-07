@@ -102,7 +102,7 @@
 #define ID_BACKGROUNDIMAGE_STRETCH      32831
 #define ID_BACKGROUNDIMAGE_REPEAT       32832
 #define ID_BACKGROUNDIMAGE_LOAD         32833
-
+#define ID_LIGHT_MATERIAL               32834
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED

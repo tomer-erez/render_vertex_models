@@ -18,6 +18,7 @@ using std::endl;
 #include "MouseSensitivityDlg.h"
 #include "PolygonFineness.h"
 #include <thread>
+#include <cmath>
 
 
 #ifdef _DEBUG
@@ -145,6 +146,7 @@ BEGIN_MESSAGE_MAP(CCGWorkView, CView)
 	ON_COMMAND(ID_BACKGROUNDIMAGE_ON, &CCGWorkView::OnBackGroundImageOn)
 	ON_UPDATE_COMMAND_UI(ID_BACKGROUNDIMAGE_ON, &CCGWorkView::OnUpdateBackGroundImageOn)
 
+	ON_COMMAND(ID_LIGHT_MATERIAL, OnMaterialDlg)
 	
 	ON_WM_LBUTTONDOWN()
 	ON_WM_MOUSEMOVE()
@@ -191,7 +193,7 @@ CCGWorkView::CCGWorkView()
 
 	m_nLightShading = ID_LIGHT_SHADING_FLAT;
 	m_solid_rendering = true;
-	m_lMaterialAmbient = 0.2;
+	m_lMaterialAmbient = 0.6;
 	m_lMaterialDiffuse = 0.8;
 	m_lMaterialSpecular = 1.0;
 	m_nMaterialCosineFactor = 32;
@@ -409,8 +411,127 @@ void CCGWorkView::DrawBoundingBox(Point* oBuffer, size_t width, size_t height, c
 	}
 }
 
+COLORREF shade_polygon(const Poly* p, COLORREF baseColor, Vector4 cameraPosition, bool isFlatShading) {
+	CCGWorkApp* cApp = (CCGWorkApp*)AfxGetApp();  // Access the application instance
 
-void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, size_t width, size_t height, const std::string& filename) {
+	int baseB = GetBValue(baseColor);
+	int baseG = GetGValue(baseColor);
+	int baseR = GetRValue(baseColor);
+
+	int r, g, b;  // Final RGB values
+	bool affected = false;
+	for (int j = LIGHT_ID_1; j < MAX_LIGHT; j++) {
+		if (cApp->m_lights[j].enabled) {
+			affected = true;
+		}
+	}
+	if (!affected) {
+		return baseColor;
+	}
+	if (isFlatShading) {
+		// **Flat Shading** - Calculate color once for the entire polygon
+		r = static_cast<int>(cApp->m_ambientLight.colorR * cApp->m_lMaterialAmbient * baseR / 255);
+		g = static_cast<int>(cApp->m_ambientLight.colorG * cApp->m_lMaterialAmbient * baseG / 255);
+		b = static_cast<int>(cApp->m_ambientLight.colorB * cApp->m_lMaterialAmbient * baseB / 255);
+
+		Normal n = p->getNormal();
+		Vector4 normal = n.getVector().normalize();
+		Vector4 pointOnSurface = n.getVector();  // Assume normal origin is the point being shaded
+		Vector4 viewDir = (cameraPosition - pointOnSurface).normalize();  // View direction
+
+		// Iterate over lights
+		for (int i = LIGHT_ID_1; i < MAX_LIGHT; i++) {
+			if (cApp->m_lights[i].enabled) {
+				Vector4 dir(cApp->m_lights[i].dirX, cApp->m_lights[i].dirY, cApp->m_lights[i].dirZ);
+				Vector4 pos(cApp->m_lights[i].posX, cApp->m_lights[i].posY, cApp->m_lights[i].posZ);
+				Vector4 lightDir;
+				
+				// Directional or point light handling
+				if (cApp->m_lights[i].type == LIGHT_TYPE_DIRECTIONAL) {
+					lightDir = (dir.flip()).normalize();  // Directional light
+				}
+				else {
+					lightDir = (pos - pointOnSurface).normalize();  // Point light
+				}
+
+				double cosTheta = max(0.0, normal.dot(lightDir));  // Clamp cosine for diffuse
+
+				// Diffuse lighting
+				r += static_cast<int>(cApp->m_lights[i].colorR * cApp->m_lMaterialDiffuse * cosTheta);
+				g += static_cast<int>(cApp->m_lights[i].colorG * cApp->m_lMaterialDiffuse * cosTheta);
+				b += static_cast<int>(cApp->m_lights[i].colorB * cApp->m_lMaterialDiffuse * cosTheta);
+
+				// Specular lighting (Blinn-Phong)
+				Vector4 halfwayDir = (lightDir + viewDir).normalize();
+				double specAngle = max(0.0, normal.dot(halfwayDir));
+				double specular = cApp->m_lMaterialSpecular * pow(specAngle, cApp->m_lMaterialShininess);
+
+				r += static_cast<int>(cApp->m_lights[i].colorR * specular);
+				g += static_cast<int>(cApp->m_lights[i].colorG * specular);
+				b += static_cast<int>(cApp->m_lights[i].colorB * specular);
+			}
+		}
+
+	}
+	else {
+		// **Gouraud Shading** - Calculate color for each vertex and interpolate
+		r = g = b = 0;
+
+		const std::vector<Vertex>& vertices = p->getVertices();  // Change to Vertex instead of Point
+		int numVertices = vertices.size();
+		for (const Vertex& vertex : vertices) {
+			Vector4 normal = vertex.getNormalCalculated().end;
+			Vector4 viewDir = (cameraPosition - vertex).normalize();
+
+			int vertexR = static_cast<int>(cApp->m_ambientLight.colorR * cApp->m_lMaterialAmbient * baseR / 255);
+			int vertexG = static_cast<int>(cApp->m_ambientLight.colorG * cApp->m_lMaterialAmbient * baseG / 255);
+			int vertexB = static_cast<int>(cApp->m_ambientLight.colorB * cApp->m_lMaterialAmbient * baseB / 255);
+
+			for (int i = LIGHT_ID_1; i < MAX_LIGHT; i++) {
+				if (cApp->m_lights[i].enabled) {
+					Vector4 dir(cApp->m_lights[i].dirX, cApp->m_lights[i].dirY, cApp->m_lights[i].dirZ);
+					Vector4 pos(cApp->m_lights[i].posX, cApp->m_lights[i].posY, cApp->m_lights[i].posZ);
+					Vector4 lightDir = (cApp->m_lights[i].type == LIGHT_TYPE_DIRECTIONAL)
+						? (dir.flip()).normalize()
+						: (pos - vertex).normalize();
+
+					double cosTheta = max(0.0, normal.dot(lightDir));
+
+					vertexR += static_cast<int>(cApp->m_lights[i].colorR * cApp->m_lMaterialDiffuse * cosTheta);
+					vertexG += static_cast<int>(cApp->m_lights[i].colorG * cApp->m_lMaterialDiffuse * cosTheta);
+					vertexB += static_cast<int>(cApp->m_lights[i].colorB * cApp->m_lMaterialDiffuse * cosTheta);
+
+					Vector4 halfwayDir = (lightDir + viewDir).normalize();
+					double specAngle = max(0.0, normal.dot(halfwayDir));
+					double specular = cApp->m_lMaterialSpecular * pow(specAngle, cApp->m_lMaterialShininess);
+
+					vertexR += static_cast<int>(cApp->m_lights[i].colorR * specular);
+					vertexG += static_cast<int>(cApp->m_lights[i].colorG * specular);
+					vertexB += static_cast<int>(cApp->m_lights[i].colorB * specular);
+				}
+			}
+
+			// Sum the vertex colors to average them
+			r += vertexR;
+			g += vertexG;
+			b += vertexB;
+		}
+
+		// Average the vertex colors
+		r /= numVertices;
+		g /= numVertices;
+		b /= numVertices;
+	}
+
+	// Clamp final color values
+	r = std::min(255, max(0, r));
+	g = std::min(255, max(0, g));
+	b = std::min(255, max(0, b));
+
+	return RGB(r, g, b);
+}
+
+void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, size_t width, size_t height, const std::string& filename, Vector4 cameraPosition, COLORREF bg_color, bool isFlatShading) {
 	PngWrapper png(filename.c_str(), width, height);
 
 	if (!png.InitWritePng()) {
@@ -422,7 +543,7 @@ void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normals
 		for (size_t x = 0; x < width; ++x) {
 			size_t index = y * width + x;
 
-			COLORREF color = RGB(0, 0, 0); // Default color
+			COLORREF color = bg_color; // Default color
 
 			// Render in the order: bgBuffer -> edgesBuffer -> normalsBuffer -> polygonsBuffer -> boundingBoxBuffer
 			if (bgBuffer && bgBuffer[index].z < FLT_MAX) {
@@ -438,7 +559,9 @@ void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normals
 			}
 
 			if (polygonsBuffer && polygonsBuffer[index].z < FLT_MAX) {
-				color = polygonsBuffer[index].getColor();
+				const Poly* p = polygonsBuffer[index].getPolygon();  // Pointer to Poly
+				COLORREF baseColor = polygonsBuffer[index].getColor();
+				color = shade_polygon(p, baseColor, cameraPosition, isFlatShading);
 			}
 
 			if (boundingBoxBuffer && boundingBoxBuffer[index].getColor() != RGB(0, 0, 0)) {
@@ -498,13 +621,13 @@ void RepeatBackgroundToBuffer(Point* bgBuffer, int* bgImageData, int bgWidth, in
 	}
 }
 
+int ind = 0;
 
-
-void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, int width, int height, CDC* pDC, COLORREF bg_color ) {
+void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, int width, int height, CDC* pDC, COLORREF bg_color, Vector4 cameraPosition) {
 	BITMAPINFO bmi = {};
 	bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	bmi.bmiHeader.biWidth = width;
-	bmi.bmiHeader.biHeight = -height; // Negative height for top-down DIB
+	bmi.bmiHeader.biHeight = -height; // Negative for top-down DIB
 	bmi.bmiHeader.biPlanes = 1;
 	bmi.bmiHeader.biBitCount = 32;   // 32-bit color depth
 	bmi.bmiHeader.biCompression = BI_RGB;
@@ -521,12 +644,16 @@ void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, P
 	HBITMAP hOldBitmap = (HBITMAP)SelectObject(memDC.GetSafeHdc(), hDIB);
 
 	COLORREF* pixels = static_cast<COLORREF*>(pBits);
+
+	CCGWorkView* pApp = (CCGWorkView*)AfxGetApp();
+	CCGWorkApp* cApp = (CCGWorkApp*)AfxGetApp();
+
 	for (int y = 0; y < height; ++y) {
 		for (int x = 0; x < width; ++x) {
 			size_t index = y * width + x;
-			COLORREF color = bg_color; // Default color
+			COLORREF color = bg_color; // Default background color
 
-			// Render in the order: bgBuffer -> edgesBuffer -> normalsBuffer -> polygonsBuffer -> boundingBoxBuffer
+			// Render buffers in the correct order of priority
 			if (bgBuffer && bgBuffer[index].z < FLT_MAX) {
 				color = bgBuffer[index].getColor();
 			}
@@ -534,24 +661,25 @@ void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, P
 			if (edgesBuffer && edgesBuffer[index].getColor() != RGB(0, 0, 0)) {
 				color = edgesBuffer[index].getColor();
 			}
+			if (polygonsBuffer && polygonsBuffer[index].z < FLT_MAX) { // Polygons take priority
 
+				const Poly* p = polygonsBuffer[index].getPolygon();  // Pointer to Poly
+				COLORREF baseColor = polygonsBuffer[index].getColor();
+				color = shade_polygon(p, baseColor, cameraPosition, m_nLightShading == ID_LIGHT_SHADING_FLAT);
+			}
 			if (normalsBuffer && normalsBuffer[index].getColor() != RGB(0, 0, 0)) {
 				color = normalsBuffer[index].getColor();
-			}
-
-			if (polygonsBuffer && polygonsBuffer[index].z < FLT_MAX) {
-				color = polygonsBuffer[index].getColor();
 			}
 
 			if (boundingBoxBuffer && boundingBoxBuffer[index].getColor() != RGB(0, 0, 0)) {
 				color = boundingBoxBuffer[index].getColor();
 			}
 
-			// No conversion needed; buffers already in RGB format
-			pixels[index] = color;
+			pixels[index] = color; // Assign the final color
 		}
 	}
 
+	// Render the bitmap to the device context
 	pDC->BitBlt(0, 0, width, height, &memDC, 0, 0, SRCCOPY);
 
 	SelectObject(memDC.GetSafeHdc(), hOldBitmap);
@@ -565,6 +693,19 @@ void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, P
 // CCGWorkView drawing
 /////////////////////////////////////////////////////////////////////////////
 void CCGWorkView::OnDraw(CDC* pDC) {
+	// Get the mouse position
+	POINT point;
+	GetCursorPos(&point);
+	ScreenToClient(&point);  // Convert to client coordinates
+	CString str;
+	// Log the mouse position to the status bar
+	str.Format(_T("Mouse Position: X = %d, Y = %d"), point.x, point.y);
+	STATUS_BAR_TEXT(str);  // Assuming STATUS_BAR_TEXT sets the status bar text
+
+	//str.Format(_T("onDraw on the %d time   \n"),ind++ );
+	//STATUS_BAR_TEXT(str);
+
+
 	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
 	CCGWorkDoc* pDoc = GetDocument();
 	ASSERT_VALID(pDoc);
@@ -644,11 +785,11 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 
 	// Render to screen or save to file
 	if (m_render_to_screen) {
-		renderToBitmap(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, pDC, pApp->Background_color);
+		renderToBitmap(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, pDC, pApp->Background_color,cameraPosition);
 	}
 	else {
 		m_render_to_screen = true;
-		saveCombinedBufferToPNG(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, "..\\..\\combined_output.png");
+		saveCombinedBufferToPNG(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, "..\\..\\combined_output.png",cameraPosition, pApp->Background_color, m_nLightShading == ID_LIGHT_SHADING_FLAT);
 	}
 
 	// Cleanup buffers
@@ -740,11 +881,14 @@ Matrix4 CCGWorkView::getMatrixToCenterObject() {
 	Matrix4 t; // Starts as the identity matrix
 
 	const Matrix4 translateToOrigin = Matrix4::translate(-center.x, -center.y, -center.z);
+	const Matrix4 rotate = Matrix4::rotateX(180);
 	const Matrix4 scaling = Matrix4::scale(sceneScale, sceneScale, sceneScale);
 	const Matrix4 translateToScreen = Matrix4::translate(screenWidth / 2.0, screenHeight / 2.0, 0.0);
 
 	// Translate to origin (center the scene)
 	t = t * translateToScreen;
+
+	t = t * rotate;
 	// Scale the scene to fit within the target screen area
 	t = t * scaling;
 	// Translate to the screen center
@@ -1005,25 +1149,34 @@ void CCGWorkView::OnUpdateLightShadingGouraud(CCmdUI* pCmdUI)
 
 // LIGHT SETUP HANDLER ///////////////////////////////////////////
 
-void CCGWorkView::OnLightConstants()
+void lightsDlgThread()
 {
+
 	CLightDialog dlg;
+	CCGWorkView* cApp = (CCGWorkView*)AfxGetApp();
+	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
 
 	for (int id = LIGHT_ID_1; id < MAX_LIGHT; id++)
 	{
-		dlg.SetDialogData((LightID)id, m_lights[id]);
+		dlg.SetDialogData((LightID)id, pApp->m_lights[id]);
 	}
-	dlg.SetDialogData(LIGHT_ID_AMBIENT, m_ambientLight);
+	dlg.SetDialogData(LIGHT_ID_AMBIENT, pApp->m_ambientLight);
 
 	if (dlg.DoModal() == IDOK)
 	{
 		for (int id = LIGHT_ID_1; id < MAX_LIGHT; id++)
 		{
-			m_lights[id] = dlg.GetDialogData((LightID)id);
+			pApp->m_lights[id] = dlg.GetDialogData((LightID)id);
 		}
-		m_ambientLight = dlg.GetDialogData(LIGHT_ID_AMBIENT);
+		pApp->m_ambientLight = dlg.GetDialogData(LIGHT_ID_AMBIENT);
 	}
-	Invalidate();
+	cApp->Invalidate();
+}
+
+void CCGWorkView::OnLightConstants()
+{
+	std::thread dialogThread(lightsDlgThread);
+	dialogThread.detach();
 }
 
 void CCGWorkView::OnTimer(UINT_PTR nIDEvent)
@@ -1209,9 +1362,9 @@ void CCGWorkView::OnMouseMove(UINT nFlags, CPoint point)
 
 		int diffrence = prev_start.x - point.x;
 		prev_start = point;
-		CString str;
+		//CString str;
 		//str.Format(_T("raw diff= %d calculated diff %d\n"), diffrence, diffrence / MOUSE_FACTOR);
-		STATUS_BAR_TEXT(str);
+		//STATUS_BAR_TEXT(str);
 		diffrence = diffrence / MOUSE_FACTOR;
 
 		MapMouseMovement(diffrence);
@@ -1219,9 +1372,9 @@ void CCGWorkView::OnMouseMove(UINT nFlags, CPoint point)
 
 	}
 
-	CString str;
-	str.Format(_T("mouse position = ( %d , %d )\n"), point.x, point.y);
-	STATUS_BAR_TEXT(str);
+	//CString str;
+	//str.Format(_T("mouse position = ( %d , %d )\n"), point.x, point.y);
+	//STATUS_BAR_TEXT(str);
 
 	CView::OnMouseMove(nFlags, point);
 }
@@ -1285,6 +1438,8 @@ void CCGWorkView::ApplyXRotation(int d) {
 	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
 
 	// Create the rotation matrix
+
+
 	Matrix4 r = Matrix4::rotateX(d);
 
 	if (m_is_object_space_transform) {
@@ -1615,4 +1770,31 @@ void CCGWorkView::OnOptionsPolygonFineness()
 	std::thread dialogThread(PolygonFinenessThread);
 	dialogThread.detach();
 }
+void MaterialDlgThread()
+{
+	CMaterialDlg dlg;
+	CCGWorkView* cApp = (CCGWorkView*)AfxGetApp();
+	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
+	//dlg.m_ambient = pApp->m_lMaterialAmbient;
+	//dlg.m_diffuse = pApp->m_lMaterialDiffuse;
+	//dlg.m_specular = pApp->m_lMaterialSpecular;
+	//dlg.m_shininess = pApp->m_lMaterialShininess;
+
+	if (dlg.DoModal() == IDOK)
+	{
+		pApp->m_lMaterialAmbient = dlg.m_ambient;
+		pApp->m_lMaterialDiffuse = dlg.m_diffuse;
+		pApp->m_lMaterialSpecular = dlg.m_specular;
+		pApp->m_lMaterialShininess = dlg.m_shininess;
+	}
+	cApp->Invalidate();
+
+}
+
+void CCGWorkView::OnMaterialDlg()
+{
+	std::thread dialogThread(MaterialDlgThread);
+	dialogThread.detach();
+}
+
 

@@ -30,8 +30,11 @@ void PolygonFineness::DoDataExchange(CDataExchange* pDX)
 void PolygonFineness::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 {
 	// TODO: Add your message handler code here and/or call default
+	
 
 	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
+
+	sliderForPolyFineness.SetPos(pApp->p_slider_polyFineness_value);
 	if (pScrollBar->GetSafeHwnd() == sliderForPolyFineness.GetSafeHwnd())
 	{
 		// Update slider value

@@ -32,7 +32,7 @@ public:
 	// Operations
 public:
 
-private:
+public:
 	CSliderCtrl m_finenessSlider; // Slider control for tessellation fineness
 
 	bool m_draw_poly_normals; //flag to choose whether to draw poly normals
@@ -67,6 +67,9 @@ private:
 	LightParams m_lights[MAX_LIGHT];	//configurable lights array
 	LightParams m_ambientLight;		//ambient light (only RGB is used)
 	CPoint prev_start;
+	
+	bool m_directional_light;
+	bool m_positional_light;
 
 
 	// Overrides
@@ -150,6 +153,7 @@ private:
 	void OnSolidRendering();
 	void OnBackGroundImageStretch();
 	void OnBackGroundImageOn();
+	void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, int width, int height, CDC* pDC, COLORREF bg_color, Vector4 cameraPosition);
 protected:
 	//{{AFX_MSG(CCGWorkView)
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
@@ -216,6 +220,8 @@ protected:
 	afx_msg void OnVertexNormalsNotFrom();
 	afx_msg void OnUpdateVertexNormalsNotFrom(CCmdUI* pCmdUI);
 
+	afx_msg void OnPositionalLight();
+	afx_msg void OnUpdatePositionalLight(CCmdUI* pCmdUI);
 
 	afx_msg void OnViewObject();
 	afx_msg void OnViewView();
@@ -231,6 +237,7 @@ protected:
 	afx_msg void OnUpdateSolidRendering(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateBackGroundImageOn(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateBackGroundImageStretch(CCmdUI* pCmdUI);
+	afx_msg void OnMaterialDlg();
 
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()

@@ -22,6 +22,7 @@ public:
     Vector4 cross(const Vector4& v) const;
     float magnitude() const;
     Vector4 normalize() const;
+    Vector4 flip() const;
 
     // Utility functions
     float distance(const Vector4& v) const;
