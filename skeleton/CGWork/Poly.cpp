@@ -1,6 +1,7 @@
 #include "Poly.h"
 #include <cfloat>
 
+
 Poly::Poly()
     : hasPolyNormalFromFile(false),
     hasPolyNormalCalculated(false),
@@ -87,11 +88,20 @@ void Poly::calculateBoundingBox(Vector4& min, Vector4& max) const {
 
 #include "Poly.h"
 
+#include "Scene.h"
+extern Scene scene;
+
 // Apply a transformation to the polygon, including vertices and normals
 void Poly::applyTransform(const Matrix4& transform, const Matrix4& normalTransform) {
     // Transform all vertices
     for (Vertex& vertex : vertices) {
         vertex.applyTransform(transform, normalTransform);
+        if (vertex.z < scene.minz) {
+            scene.minz = vertex.z;
+        }
+        if (vertex.z > scene.minz) {
+            scene.maxz = vertex.z;
+        }
     }
 
     // Transform polygon normal from file

@@ -48,6 +48,8 @@ protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnObjectColor();
 	afx_msg void OnBackgroundColor();
+	afx_msg void OnFogColor();
+
 	afx_msg void OnVertexNormalsColor();
 	afx_msg void OnPolygonNormalsColor();
 	// NOTE - the ClassWizard will add and remove member functions here.

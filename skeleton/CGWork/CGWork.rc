@@ -145,6 +145,20 @@ BEGIN
         MENUITEM "stretch",                     ID_BACKGROUNDIMAGE_STRETCH, CHECKED
         MENUITEM "load",                        ID_BACKGROUNDIMAGE_LOAD
     END
+    POPUP "anti aliasing"
+    BEGIN
+        MENUITEM "None",                        ID_ANTIALIASING_NONE
+        MENUITEM "box",                         ID_ANTIALIASING_BOX
+        MENUITEM "triangle",                    ID_ANTIALIASING_TRIANGLE
+        MENUITEM "GAUSSIAN",                    ID_ANTIALIASING_GAUSSIAN
+        MENUITEM "sinc",                        ID_ANTIALIASING_SINC
+        MENUITEM "5x5",                         ID_ANTIALIASING_5X5
+    END
+    POPUP "fog effects"
+    BEGIN
+        MENUITEM "on",                          ID_FOGEFFECTS_ON
+        MENUITEM "color",                       ID_FOGEFFECTS_COLOR
+    END
 END
 
 

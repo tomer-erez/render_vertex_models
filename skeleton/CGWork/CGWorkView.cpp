@@ -146,6 +146,34 @@ BEGIN_MESSAGE_MAP(CCGWorkView, CView)
 	ON_COMMAND(ID_BACKGROUNDIMAGE_ON, &CCGWorkView::OnBackGroundImageOn)
 	ON_UPDATE_COMMAND_UI(ID_BACKGROUNDIMAGE_ON, &CCGWorkView::OnUpdateBackGroundImageOn)
 
+	// 5x5 Anti-aliasing
+	ON_COMMAND(ID_ANTIALIASING_5X5, &CCGWorkView::OnAntiAliasing5x5)
+	ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_5X5, &CCGWorkView::OnUpdateAntiAliasing5x5)
+
+	// None Anti-aliasing
+	ON_COMMAND(ID_ANTIALIASING_NONE, &CCGWorkView::OnAntiAliasingNone)
+	ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_NONE, &CCGWorkView::OnUpdateAntiAliasingNone)
+
+	// Box Anti-aliasing
+	ON_COMMAND(ID_ANTIALIASING_BOX, &CCGWorkView::OnAntiAliasingBox)
+	ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_BOX, &CCGWorkView::OnUpdateAntiAliasingBox)
+
+	// Triangle Anti-aliasing
+	ON_COMMAND(ID_ANTIALIASING_TRIANGLE, &CCGWorkView::OnAntiAliasingTriangle)
+	ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_TRIANGLE, &CCGWorkView::OnUpdateAntiAliasingTriangle)
+
+	// Sinc Anti-aliasing
+	ON_COMMAND(ID_ANTIALIASING_SINC, &CCGWorkView::OnAntiAliasingSinc)
+	ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_SINC, &CCGWorkView::OnUpdateAntiAliasingSinc)
+
+	// Gaussian Anti-aliasing
+	ON_COMMAND(ID_ANTIALIASING_GAUSSIAN, &CCGWorkView::OnAntiAliasingGaussian)
+	ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_GAUSSIAN, &CCGWorkView::OnUpdateAntiAliasingGaussian)
+
+	// fog effects
+	ON_COMMAND(ID_FOGEFFECTS_ON, &CCGWorkView::OnFogEffectsOn)
+	ON_UPDATE_COMMAND_UI(ID_FOGEFFECTS_ON, &CCGWorkView::OnUpdateFogEffectsOn)
+
 	ON_COMMAND(ID_LIGHT_MATERIAL, OnMaterialDlg)
 	
 	ON_WM_LBUTTONDOWN()
@@ -205,6 +233,14 @@ CCGWorkView::CCGWorkView()
 	m_isDragging = false;
 	prev_start = CPoint(0, 0);
 	m_do_back_face_culling = false;
+
+	m_anti_aliasing_5x5 =false;
+	m_anti_aliasing_None = true;
+	m_anti_aliasing_Box = false;
+	m_anti_aliasing_Triangle = false;
+	m_anti_aliasing_Sinc = false;
+	m_anti_aliasing_Gaussian = false;
+	m_fog_effects_on = false;
 }
 
 CCGWorkView::~CCGWorkView()
@@ -411,6 +447,29 @@ void CCGWorkView::DrawBoundingBox(Point* oBuffer, size_t width, size_t height, c
 	}
 }
 
+
+COLORREF apply_fog(COLORREF objectColor, COLORREF fogColor, float pixel_z, float fogStart, float fogEnd) {
+	// Clamp z to be within the fog range
+	if (pixel_z < fogStart) {
+		return objectColor;  // No fog if closer than fogStart
+	}
+	else if (pixel_z > fogEnd) {
+		return fogColor;  // Full fog if farther than fogEnd
+	}
+
+	// Calculate fog factor (linear interpolation)
+	float fogFactor = 1.0f - exp(-0.005 * (pixel_z - fogStart));
+
+	// Blend object color with fog color
+	BYTE r = (BYTE)((1 - fogFactor) * GetRValue(objectColor) + fogFactor * GetRValue(fogColor));
+	BYTE g = (BYTE)((1 - fogFactor) * GetGValue(objectColor) + fogFactor * GetGValue(fogColor));
+	BYTE b = (BYTE)((1 - fogFactor) * GetBValue(objectColor) + fogFactor * GetBValue(fogColor));
+
+	return RGB(r, g, b);
+}
+
+
+
 COLORREF shade_polygon(const Poly* p, COLORREF baseColor, Vector4 cameraPosition, bool isFlatShading) {
 	CCGWorkApp* cApp = (CCGWorkApp*)AfxGetApp();  // Access the application instance
 
@@ -531,7 +590,9 @@ COLORREF shade_polygon(const Poly* p, COLORREF baseColor, Vector4 cameraPosition
 	return RGB(r, g, b);
 }
 
-void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, size_t width, size_t height, const std::string& filename, Vector4 cameraPosition, COLORREF bg_color, bool isFlatShading) {
+
+
+void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, size_t width, size_t height, const std::string& filename, Vector4 cameraPosition, COLORREF bg_color, bool isFlatShading, bool use_fog, COLORREF fog_color) {
 	PngWrapper png(filename.c_str(), width, height);
 
 	if (!png.InitWritePng()) {
@@ -562,6 +623,10 @@ void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normals
 				const Poly* p = polygonsBuffer[index].getPolygon();  // Pointer to Poly
 				COLORREF baseColor = polygonsBuffer[index].getColor();
 				color = shade_polygon(p, baseColor, cameraPosition, isFlatShading);
+				if (use_fog) {
+					float obj_z = polygonsBuffer[index].z;
+					color = apply_fog(color, fog_color, obj_z, scene.minz, scene.maxz);  // Example fog range and color
+				}
 			}
 
 			if (boundingBoxBuffer && boundingBoxBuffer[index].getColor() != RGB(0, 0, 0)) {
@@ -623,7 +688,10 @@ void RepeatBackgroundToBuffer(Point* bgBuffer, int* bgImageData, int bgWidth, in
 
 int ind = 0;
 
-void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, int width, int height, CDC* pDC, COLORREF bg_color, Vector4 cameraPosition) {
+void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer, 
+									Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, 
+									int width, int height, CDC* pDC, COLORREF bg_color, Vector4 cameraPosition,COLORREF fog_color, bool use_fog
+) {
 	BITMAPINFO bmi = {};
 	bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	bmi.bmiHeader.biWidth = width;
@@ -647,7 +715,6 @@ void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* nor
 
 	CCGWorkView* pApp = (CCGWorkView*)AfxGetApp();
 	CCGWorkApp* cApp = (CCGWorkApp*)AfxGetApp();
-
 	for (int y = 0; y < height; ++y) {
 		for (int x = 0; x < width; ++x) {
 			size_t index = y * width + x;
@@ -666,6 +733,11 @@ void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* nor
 				const Poly* p = polygonsBuffer[index].getPolygon();  // Pointer to Poly
 				COLORREF baseColor = polygonsBuffer[index].getColor();
 				color = shade_polygon(p, baseColor, cameraPosition, m_nLightShading == ID_LIGHT_SHADING_FLAT);
+				// Apply fog based on the distance z
+				if (use_fog) {
+					float obj_z = polygonsBuffer[index].z;
+					color = apply_fog(color, fog_color, obj_z, scene.minz, scene.maxz);  // Example fog range and color
+				}
 			}
 			if (normalsBuffer && normalsBuffer[index].getColor() != RGB(0, 0, 0)) {
 				color = normalsBuffer[index].getColor();
@@ -674,6 +746,7 @@ void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* nor
 			if (boundingBoxBuffer && boundingBoxBuffer[index].getColor() != RGB(0, 0, 0)) {
 				color = boundingBoxBuffer[index].getColor();
 			}
+			
 
 			pixels[index] = color; // Assign the final color
 		}
@@ -785,11 +858,11 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 
 	// Render to screen or save to file
 	if (m_render_to_screen) {
-		renderToBitmap(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, pDC, pApp->Background_color,cameraPosition);
+		renderToBitmap(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, pDC, pApp->Background_color,cameraPosition, pApp->fog_color, m_fog_effects_on);
 	}
 	else {
 		m_render_to_screen = true;
-		saveCombinedBufferToPNG(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, "..\\..\\combined_output.png",cameraPosition, pApp->Background_color, m_nLightShading == ID_LIGHT_SHADING_FLAT);
+		saveCombinedBufferToPNG(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, "..\\..\\combined_output.png",cameraPosition, pApp->Background_color, m_nLightShading == ID_LIGHT_SHADING_FLAT, m_fog_effects_on, pApp->fog_color);
 	}
 
 	// Cleanup buffers
@@ -988,11 +1061,13 @@ void CCGWorkView::OnFileLoad() {
 		CGSkelProcessIritDataFiles(m_strItdFileName, 1);
 
 		// Calculate bounding box and determine initial transformation
-		 Matrix4 t = getMatrixToCenterObject();
-
+		Matrix4 t = getMatrixToCenterObject();
 		scene.calculateVertexNormals();
-
 		scene.applyTransform(t);
+		double scene_min_z = scene.minz;
+		Matrix4 zBack = Matrix4::translate(0, 0, -scene.minz);
+		scene.applyTransform(zBack);
+		scene.calculateVertexNormals();
 
 
 		scene.updateIsFirstDraw(false);
@@ -1403,6 +1478,27 @@ void CCGWorkView::OnLButtonUp(UINT nFlags, CPoint point)
 }
 
 
+double validateFactor(double factor) {
+	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
+	if (factor == 0) {
+		return 1;
+	}
+	else if (factor >= 0) {
+		return 1.2 * pApp->s_slider_value;
+	}
+	else {
+		return 0.81 / pApp->s_slider_value;;
+	}
+	/*
+	const double threshold = 0.01;
+	if (std::abs(factor) < threshold) {
+		// Return the threshold value with the same sign as the original factor
+		return (factor < 0) ? -threshold : threshold;
+	}
+	return factor; // Return the original factor if it's above the threshold
+	*/
+}
+
 ////transformation matrices
 Matrix4 CreateCenteredRotationMatrix(const Matrix4& rotationMatrix) {
 	Vector4 center = scene.getObjectCenter();
@@ -1524,9 +1620,11 @@ void CCGWorkView::ApplyYTranslation(int d) {
 
 void CCGWorkView::ApplyZTranslation(int d) {
 	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
-	Matrix4 transformation = Matrix4::translate(0, 0, d);
-
-	ApplyTransformation(transformation);
+	Matrix4 r = Matrix4::translate(0, 0, d);
+	double f = validateFactor(d);
+	Matrix4 q = CreateCenteredScalingMatrix(f, f, f);
+	Matrix4 res = r * q;
+	ApplyTransformation(q);
 
 	// Update status bar
 	CString str;
@@ -1535,26 +1633,7 @@ void CCGWorkView::ApplyZTranslation(int d) {
 }
 
 
-double validateFactor(double factor) {
-	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
-	if (factor == 0) {
-		return 1;
-	}
-	else if (factor >= 0) {
-		return 1.2 * pApp->s_slider_value;
-	}
-	else {
-		return 0.81 / pApp->s_slider_value;;
-	}
-	/*
-	const double threshold = 0.01;
-	if (std::abs(factor) < threshold) {
-		// Return the threshold value with the same sign as the original factor
-		return (factor < 0) ? -threshold : threshold;
-	}
-	return factor; // Return the original factor if it's above the threshold
-	*/
-	}
+
 
 void CCGWorkView::ApplyXScale(double factor) {
 	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
@@ -1798,3 +1877,124 @@ void CCGWorkView::OnMaterialDlg()
 }
 
 
+/*
+ANTI ALIASING menu stuff
+*/
+
+// 5x5 Anti-aliasing
+void CCGWorkView::OnAntiAliasing5x5() {
+	// Enable 5x5 and disable others
+	m_anti_aliasing_5x5 = !m_anti_aliasing_5x5;
+	// Update menu items
+}
+
+void CCGWorkView::OnUpdateAntiAliasing5x5(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_anti_aliasing_5x5 == true);
+}
+
+// None Anti-aliasing
+void CCGWorkView::OnAntiAliasingNone() {
+	m_anti_aliasing_None = true;
+	m_anti_aliasing_Box = false;
+	m_anti_aliasing_Triangle = false;
+	m_anti_aliasing_Sinc = false;
+	m_anti_aliasing_Gaussian = false;
+
+	// Update menu items
+	CheckMenuItem(ID_ANTIALIASING_NONE, true);
+	CheckMenuItem(ID_ANTIALIASING_BOX, false);
+	CheckMenuItem(ID_ANTIALIASING_TRIANGLE, false);
+	CheckMenuItem(ID_ANTIALIASING_SINC, false);
+	CheckMenuItem(ID_ANTIALIASING_GAUSSIAN, false);
+}
+
+void CCGWorkView::OnUpdateAntiAliasingNone(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_anti_aliasing_None == true);
+}
+
+// Box Anti-aliasing
+void CCGWorkView::OnAntiAliasingBox() {
+	m_anti_aliasing_None = false;
+	m_anti_aliasing_Box = true;
+	m_anti_aliasing_Triangle = false;
+	m_anti_aliasing_Sinc = false;
+	m_anti_aliasing_Gaussian = false;
+
+	// Update menu items
+	CheckMenuItem(ID_ANTIALIASING_NONE, false);
+	CheckMenuItem(ID_ANTIALIASING_BOX, true);
+	CheckMenuItem(ID_ANTIALIASING_TRIANGLE, false);
+	CheckMenuItem(ID_ANTIALIASING_SINC, false);
+	CheckMenuItem(ID_ANTIALIASING_GAUSSIAN, false);
+}
+
+void CCGWorkView::OnUpdateAntiAliasingBox(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_anti_aliasing_Box == true);
+}
+
+// Triangle Anti-aliasing
+void CCGWorkView::OnAntiAliasingTriangle() {
+	m_anti_aliasing_None = false;
+	m_anti_aliasing_Box = false;
+	m_anti_aliasing_Triangle = true;
+	m_anti_aliasing_Sinc = false;
+	m_anti_aliasing_Gaussian = false;
+
+	// Update menu items
+	CheckMenuItem(ID_ANTIALIASING_NONE, false);
+	CheckMenuItem(ID_ANTIALIASING_BOX, false);
+	CheckMenuItem(ID_ANTIALIASING_TRIANGLE, true);
+	CheckMenuItem(ID_ANTIALIASING_SINC, false);
+	CheckMenuItem(ID_ANTIALIASING_GAUSSIAN, false);
+}
+
+void CCGWorkView::OnUpdateAntiAliasingTriangle(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_anti_aliasing_Triangle == true);
+}
+
+// Sinc Anti-aliasing
+void CCGWorkView::OnAntiAliasingSinc() {
+	m_anti_aliasing_None = false;
+	m_anti_aliasing_Box = false;
+	m_anti_aliasing_Triangle = false;
+	m_anti_aliasing_Sinc = true;
+	m_anti_aliasing_Gaussian = false;
+
+	// Update menu items
+	CheckMenuItem(ID_ANTIALIASING_NONE, false);
+	CheckMenuItem(ID_ANTIALIASING_BOX, false);
+	CheckMenuItem(ID_ANTIALIASING_TRIANGLE, false);
+	CheckMenuItem(ID_ANTIALIASING_SINC, true);
+	CheckMenuItem(ID_ANTIALIASING_GAUSSIAN, false);
+}
+
+void CCGWorkView::OnUpdateAntiAliasingSinc(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_anti_aliasing_Sinc == true);
+}
+
+// Gaussian Anti-aliasing
+void CCGWorkView::OnAntiAliasingGaussian() {
+	m_anti_aliasing_None = false;
+	m_anti_aliasing_Box = false;
+	m_anti_aliasing_Triangle = false;
+	m_anti_aliasing_Sinc = false;
+	m_anti_aliasing_Gaussian = true;
+
+	// Update menu items
+	CheckMenuItem(ID_ANTIALIASING_NONE, false);
+	CheckMenuItem(ID_ANTIALIASING_BOX, false);
+	CheckMenuItem(ID_ANTIALIASING_TRIANGLE, false);
+	CheckMenuItem(ID_ANTIALIASING_SINC, false);
+	CheckMenuItem(ID_ANTIALIASING_GAUSSIAN, true);
+}
+
+void CCGWorkView::OnUpdateAntiAliasingGaussian(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_anti_aliasing_Gaussian == true);
+}
+
+void CCGWorkView::OnFogEffectsOn() {
+	m_fog_effects_on = !m_fog_effects_on;
+}
+void CCGWorkView::OnUpdateFogEffectsOn(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_fog_effects_on == true);
+}

@@ -256,6 +256,8 @@ void Scene::clear() {
     boundingBox = { Vector4(DBL_MAX, DBL_MAX, DBL_MAX, 1.0), Vector4(DBL_MIN, DBL_MIN, DBL_MIN, 1.0) };
     hasVertexNormals = false;
     delete[] m_backgroundImage;
+    maxz = -DBL_MAX;
+    minz = DBL_MAX;
 
 }
 

@@ -66,7 +66,11 @@ private:
 
     Vector4 objectCenter; //center of the object , will keep it to rotate and scale around it!
 
+
+
 public:
+    double minz = DBL_MAX;
+    double maxz = -DBL_MAX;
     void addEdge(Poly* poly, const std::shared_ptr<Vertex>& v1, const std::shared_ptr<Vertex>& v2);
     const std::unordered_map<std::pair<std::shared_ptr<Vertex>, std::shared_ptr<Vertex>>, Edge*, Edge::Hash>& getEdges() const;
 

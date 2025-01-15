@@ -27,6 +27,8 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_COMMAND(ID_OPTIONS_OBJECTCOLOR, &CMainFrame::OnObjectColor)
 
 	ON_COMMAND(ID_OPTIONS_BACKGROUNDCOLOR, &CMainFrame::OnBackgroundColor)
+	ON_COMMAND(ID_FOGEFFECTS_COLOR, &CMainFrame::OnFogColor)
+
 	ON_COMMAND(ID_OPTIONS_VERTEXNORMALSCOLOR, &CMainFrame::OnVertexNormalsColor)
 	ON_COMMAND(ID_OPTIONS_POLYGONNORMALSCOLOR, &CMainFrame::OnPolygonNormalsColor)
 	//}}AFX_MSG_MAP
@@ -137,6 +139,26 @@ void CMainFrame::OnObjectColor()
 
 		// Use the selected color (e.g., store it, apply it, etc.)
 		pApp->Object_color = selectedColor;
+
+	}
+}
+
+
+void CMainFrame::OnFogColor()
+{
+	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
+	COLORREF initialColor = pApp->fog_color;
+	CColorDialog colorDlg(initialColor);
+
+	// Display the dialog and handle the user's choice
+	if (colorDlg.DoModal() == IDOK)
+	{
+		// Get the selected color
+		COLORREF selectedColor = colorDlg.GetColor();
+
+		// Use the selected color (e.g., store it, apply it, etc.)
+
+		pApp->fog_color = selectedColor;
 
 	}
 }

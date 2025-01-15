@@ -64,12 +64,21 @@ public:
 	double m_lMaterialSpecular;		// The Specular in the scene
 	int m_nMaterialCosineFactor;		// The cosine factor for the specular
 
+	bool m_anti_aliasing_5x5;
+	bool m_anti_aliasing_None;
+	bool m_anti_aliasing_Box;
+	bool m_anti_aliasing_Triangle;
+	bool m_anti_aliasing_Sinc;
+	bool m_anti_aliasing_Gaussian;
+
 	LightParams m_lights[MAX_LIGHT];	//configurable lights array
 	LightParams m_ambientLight;		//ambient light (only RGB is used)
 	CPoint prev_start;
 	
 	bool m_directional_light;
 	bool m_positional_light;
+
+	bool m_fog_effects_on;
 
 
 	// Overrides
@@ -153,7 +162,8 @@ private:
 	void OnSolidRendering();
 	void OnBackGroundImageStretch();
 	void OnBackGroundImageOn();
-	void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, int width, int height, CDC* pDC, COLORREF bg_color, Vector4 cameraPosition);
+	void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, int width, 
+		int height, CDC* pDC, COLORREF bg_color, Vector4 cameraPosition, COLORREF fog_color, bool use_fog);
 protected:
 	//{{AFX_MSG(CCGWorkView)
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
@@ -224,10 +234,11 @@ protected:
 	afx_msg void OnUpdatePositionalLight(CCmdUI* pCmdUI);
 
 	afx_msg void OnViewObject();
-	afx_msg void OnViewView();
-
 	afx_msg void OnUpdateViewObject(CCmdUI* pCmdUI);
+
+	afx_msg void OnViewView();
 	afx_msg void OnUpdateViewView(CCmdUI* pCmdUI);
+
 	afx_msg void OnUpdateDrawSilhouettes(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateFlipNormals(CCmdUI* pCmdUI);
 
@@ -239,6 +250,33 @@ protected:
 	afx_msg void OnUpdateBackGroundImageStretch(CCmdUI* pCmdUI);
 	afx_msg void OnMaterialDlg();
 
+	// 5x5 Anti-aliasing
+	afx_msg void OnAntiAliasing5x5();
+	afx_msg void OnUpdateAntiAliasing5x5(CCmdUI* pCmdUI);
+
+	// None Anti-aliasing
+	afx_msg void OnAntiAliasingNone();
+	afx_msg void OnUpdateAntiAliasingNone(CCmdUI* pCmdUI);
+
+	// Box Anti-aliasing
+	afx_msg void OnAntiAliasingBox();
+	afx_msg void OnUpdateAntiAliasingBox(CCmdUI* pCmdUI);
+
+	// Triangle Anti-aliasing
+	afx_msg void OnAntiAliasingTriangle();
+	afx_msg void OnUpdateAntiAliasingTriangle(CCmdUI* pCmdUI);
+
+	// Sinc Anti-aliasing
+	afx_msg void OnAntiAliasingSinc();
+	afx_msg void OnUpdateAntiAliasingSinc(CCmdUI* pCmdUI);
+
+	// Gaussian Anti-aliasing
+	afx_msg void OnAntiAliasingGaussian();
+	afx_msg void OnUpdateAntiAliasingGaussian(CCmdUI* pCmdUI);
+
+	// Gaussian Anti-aliasing
+	afx_msg void OnFogEffectsOn();
+	afx_msg void OnUpdateFogEffectsOn(CCmdUI* pCmdUI);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 public:

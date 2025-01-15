@@ -30,6 +30,7 @@ public:
 	int p_slider_polyFineness_value;
 
 	COLORREF Object_color;
+	COLORREF fog_color;
 	COLORREF Background_color;
 	COLORREF vertex_normals_color;
 	COLORREF poly_normals_color;

@@ -103,12 +103,24 @@
 #define ID_BACKGROUNDIMAGE_REPEAT       32832
 #define ID_BACKGROUNDIMAGE_LOAD         32833
 #define ID_LIGHT_MATERIAL               32834
+#define ID_ANTIALIASING_BOX             32835
+#define ID_ANTIALIASING_TRIANGLE        32836
+#define ID_ANTIALIASING_KERNEL          32837
+#define ID_ANTIALIASING_SINC            32838
+#define ID_ANTIALIASING_3X3             32839
+#define ID_ANTIALIASING_5X5             32840
+#define ID_ANTIALIASING_GAUSSIAN        32841
+#define ID_ANTIALIASING_NONE            32842
+#define ID_FOGEFFECTS_ON                32843
+#define ID_FOGEFFECTS_ON32844           32844
+#define ID_FOGEFFECTS_COLOR             32845
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        149
-#define _APS_NEXT_COMMAND_VALUE         32834
+#define _APS_NEXT_COMMAND_VALUE         32846
 #define _APS_NEXT_CONTROL_VALUE         1048
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
