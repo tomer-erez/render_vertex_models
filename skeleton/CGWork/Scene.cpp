@@ -57,6 +57,8 @@ size_t Scene::getPolygonCount() const {
 
 //applying a transformation to the whole scene
 void Scene::applyTransform(const Matrix4& transform) {
+    double minz = DBL_MAX;
+    double maxz = -DBL_MAX;
     Matrix4 normalTransform = transform.inverse().transpose(); // Inverse-transpose for transforming normals
 
     // Apply transformation to all polygons in the scene

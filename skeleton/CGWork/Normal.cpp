@@ -42,9 +42,11 @@ bool Normal::isBackFacing(const Vector4& viewDirection) const {
 // Apply a transformation to the normal
 void Normal::transform(const Matrix4& transform, const Matrix4& normalTransform) {
     Vector4 direction = end - start;
-    Vector4 transformedDirection = normalTransform.transform(direction).normalize() * 16.0;
+    //Vector4 transformedDirection = normalTransform.transform(direction).normalize() * 16.0;
     start = transform.transform(start);
-    end = start + transformedDirection;
+    end = transform.transform(end);
+
+    //end = start + transformedDirection;
 }
 
 void Normal::flip() {
