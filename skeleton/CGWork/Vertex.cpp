@@ -74,21 +74,25 @@ void Vertex::applyTransform(const Matrix4& transform, const Matrix4& normalTrans
     *this = transform.transform(*this);
 
     // Transform normals if the vertex has a normal
-    const Vector4 direction = normalCalculated.end - normalCalculated.start;
-    const Vector4 transformedDirection = normalTransform.transform(direction).normalize() * F;
+    //const Vector4 direction = normalCalculated.end - normalCalculated.start;
+    //const Vector4 transformedDirection = normalTransform.transform(direction).normalize() * F;
 
     // Transform the start and end points of the normal
     const Vector4 transformedStart = transform.transform(normalCalculated.start);
-    normalCalculated = Normal(transformedStart, transformedStart + transformedDirection);
+    const Vector4 transformedEnd = transform.transform(normalCalculated.end);
+
+    normalCalculated = Normal(transformedStart, transformedEnd);
 
     ////////////////////////////////////////////////////////////////////////////////////////////
     
 
     // Transform the normal from file if it exists
-    const Vector4 fileDirection = normalFromFile.end - normalFromFile.start;
-    const Vector4 transformedFileDirection = normalTransform.transform(fileDirection).normalize() * F;
+    //const Vector4 fileDirection = normalFromFile.end - normalFromFile.start;
+    //const Vector4 transformedFileDirection = normalTransform.transform(fileDirection).normalize() * F;
 
     const Vector4 transformedFileStart = transform.transform(normalFromFile.start);
-    normalFromFile = Normal(transformedFileStart, transformedFileStart + transformedFileDirection);
+    const Vector4 transformedFileEnd = transform.transform(normalFromFile.end);
+
+    normalFromFile = Normal(transformedFileStart, transformedFileEnd);
     
 }
