@@ -19,7 +19,7 @@ using std::endl;
 #include "PolygonFineness.h"
 #include <thread>
 #include <cmath>
-
+#include "AntiAliasing.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -849,6 +849,26 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 		if (normalsBuffer) {
 			DrawPolygonNormal(normalsBuffer, width, height, poly, pApp->poly_normals_color);
 		}
+	}
+	// Apply anti-aliasing after rendering
+	if (polygonsBuffer && !m_anti_aliasing_None) {
+		int kernelSize = m_anti_aliasing_5x5 ? 5 : 3;
+
+		std::string filterName;
+		if (m_anti_aliasing_Box) {
+			filterName = "Box";
+		}
+		else if (m_anti_aliasing_Triangle) {
+			filterName = "Triangle";
+		}
+		else if (m_anti_aliasing_Gaussian) {
+			filterName = "Gaussian";
+		}
+		else if (m_anti_aliasing_Sinc) {
+			filterName = "Sinc";
+		}
+		applyAntiAliasingByName(polygonsBuffer, width, height, kernelSize, filterName);
+
 	}
 
 	// Draw bounding box if enabled
