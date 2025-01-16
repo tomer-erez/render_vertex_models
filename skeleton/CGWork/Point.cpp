@@ -35,7 +35,4 @@ void Point::setPolygon(Poly* p)
     poly = p;
 }
 
-const Poly* Point::getPolygon()
-{
-    return poly;
-}
+

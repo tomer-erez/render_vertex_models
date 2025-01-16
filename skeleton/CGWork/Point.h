@@ -21,7 +21,7 @@ public:
     void setColor(COLORREF newColor);
     COLORREF getColor() const;
     void setPolygon(Poly* p);
-    const Poly* getPolygon();
+    const Poly* getPolygon() const { return poly; }  // Make it const-correct
 };
 
 #endif // POINT_H

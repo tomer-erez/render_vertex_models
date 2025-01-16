@@ -14,6 +14,6 @@ Point* initZBuffer(size_t width, size_t height);
 void freeZBuffer(Point* zBuffer);
 
 // Render a polygon using scan conversion and Z-buffering
-int renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& polygon, const Vector4& cameraPosition, bool doBackFaceCulling);
+void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& polygon, const Vector4& cameraPosition, bool doBackFaceCulling);
 
 #endif // SCAN_CONVERT_ZBUFFER_H
