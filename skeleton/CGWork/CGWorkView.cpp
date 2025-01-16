@@ -654,9 +654,7 @@ void saveCombinedBufferToPNG(
 	for (size_t y = 0; y < height; ++y) {
 		for (size_t x = 0; x < width; ++x) {
 			size_t index = y * width + x;
-
 			COLORREF color = combinedBuffer[index].getColor();
-
 			// Convert COLORREF to RGBA for PngWrapper
 			unsigned int b = GetBValue(color);
 			unsigned int g = GetGValue(color);
@@ -676,17 +674,13 @@ void saveCombinedBufferToPNG(
 }
 
 
-
-
 void StretchBackgroundToBuffer(Point* bgBuffer, int* bgImageData, int bgWidth, int bgHeight, size_t width, size_t height) {
 	for (size_t y = 0; y < height; y++) {
 		for (size_t x = 0; x < width; x++) {
 			int srcX = static_cast<int>((static_cast<float>(x) / width) * bgWidth);
 			int srcY = static_cast<int>((static_cast<float>(y) / height) * bgHeight);
-
 			// Get the color from the background image
 			int color = bgImageData[srcY * bgWidth + srcX];
-
 			// Keep it in RGB format
 			bgBuffer[y * width + x] = Point(static_cast<float>(x), static_cast<float>(y), 1.0f, 1.0f, color);
 		}
