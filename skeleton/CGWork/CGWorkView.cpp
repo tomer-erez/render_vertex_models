@@ -590,22 +590,22 @@ COLORREF shade_polygon(const Poly* p, COLORREF baseColor, Vector4 cameraPosition
 	return RGB(r, g, b);
 }
 
-
-
 void saveCombinedBufferToPNG(
-	Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, 
-	Point* polygonsBuffer, Point* boundingBoxBuffer, size_t width, 
-	size_t height, const std::string& filename, 
-	Vector4 cameraPosition, COLORREF bg_color, bool isFlatShading, bool use_fog, 
-	COLORREF fog_color,bool m_anti_aliasing_None, int kernelSize, const std::string& filterName
+	Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer,
+	Point* polygonsBuffer, Point* boundingBoxBuffer, size_t width,
+	size_t height, const std::string& filename,
+	Vector4 cameraPosition, COLORREF bg_color, bool isFlatShading, bool use_fog,
+	COLORREF fog_color, bool m_anti_aliasing_None, int kernelSize, const std::string& filterName) {
 
-) {
 	PngWrapper png(filename.c_str(), width, height);
 
 	if (!png.InitWritePng()) {
 		std::cerr << "Failed to initialize PNG writing!" << std::endl;
 		return;
 	}
+
+	// Temporary buffer for storing the combined image
+	std::vector<Point> combinedBuffer(width * height);
 
 	for (size_t y = 0; y < height; ++y) {
 		for (size_t x = 0; x < width; ++x) {
@@ -640,14 +640,27 @@ void saveCombinedBufferToPNG(
 				color = boundingBoxBuffer[index].getColor();
 			}
 
-			//if (!m_anti_aliasing_None) {
-				//applyAntiAliasingByName(polygonsBuffer, width, height, kernelSize, filterName);
-			//}
+			// Store the combined color in the temporary buffer
+			combinedBuffer[index].setColor(color);
+		}
+	}
+
+	// Apply anti-aliasing if enabled
+	if (!m_anti_aliasing_None) {
+		applyAntiAliasingByName(combinedBuffer.data(), width, height, kernelSize, filterName);
+	}
+
+	// Write the (possibly anti-aliased) combined buffer to the PNG
+	for (size_t y = 0; y < height; ++y) {
+		for (size_t x = 0; x < width; ++x) {
+			size_t index = y * width + x;
+
+			COLORREF color = combinedBuffer[index].getColor();
 
 			// Convert COLORREF to RGBA for PngWrapper
-			unsigned int b = GetRValue(color);
+			unsigned int b = GetBValue(color);
 			unsigned int g = GetGValue(color);
-			unsigned int r = GetBValue(color);
+			unsigned int r = GetRValue(color);
 			unsigned int pixelValue = (r << 24) | (g << 16) | (b << 8);
 
 			// Set the pixel value in the PngWrapper
