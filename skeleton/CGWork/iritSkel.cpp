@@ -139,6 +139,7 @@ bool CGSkelStoreData(IPObjectStruct* PObj) {//we are calling this func once per 
 	IPPolygonStruct* PPolygon;
 	IPVertexStruct* PVertex;
 	const IPAttributeStruct* Attrs = AttrTraceAttributes(PObj->Attr, PObj->Attr);
+	double transperancy = 0;
 
 	if (PObj->ObjType != IP_OBJ_POLY) {
 		AfxMessageBox(_T("Non-polygonal object detected and ignored"));
@@ -152,7 +153,7 @@ bool CGSkelStoreData(IPObjectStruct* PObj) {//we are calling this func once per 
 	}
 
 	if (CGSkelGetObjectTransp(PObj, &Transp)) {
-		// Handle transparency if needed
+		transperancy = Transp;
 	}
 
 	if ((Str = CGSkelGetObjectTexture(PObj)) != NULL) {
@@ -190,9 +191,9 @@ bool CGSkelStoreData(IPObjectStruct* PObj) {//we are calling this func once per 
 
 
 		do {
-
 			// Create vertex from file coordinates
 			Vertex vertex(PVertex->Coord[0], PVertex->Coord[1], PVertex->Coord[2]); 
+			vertex.transperancy = transperancy;
 			vertexCount++; // Update count of vertices
 			centroid = centroid + vertex; // Update the centroid (later will divide by vertex count)
 
