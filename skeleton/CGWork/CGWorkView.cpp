@@ -590,15 +590,22 @@ COLORREF shade_polygon(const Poly* p, COLORREF baseColor, Vector4 cameraPosition
 	return RGB(r, g, b);
 }
 
+void saveCombinedBufferToPNG(
+	Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer,
+	Point* polygonsBuffer, Point* boundingBoxBuffer, size_t width,
+	size_t height, const std::string& filename,
+	Vector4 cameraPosition, COLORREF bg_color, bool isFlatShading, bool use_fog,
+	COLORREF fog_color, bool m_anti_aliasing_None, int kernelSize, const std::string& filterName) {
 
-
-void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, size_t width, size_t height, const std::string& filename, Vector4 cameraPosition, COLORREF bg_color, bool isFlatShading, bool use_fog, COLORREF fog_color) {
 	PngWrapper png(filename.c_str(), width, height);
 
 	if (!png.InitWritePng()) {
 		std::cerr << "Failed to initialize PNG writing!" << std::endl;
 		return;
 	}
+
+	// Temporary buffer for storing the combined image
+	std::vector<Point> combinedBuffer(width * height);
 
 	for (size_t y = 0; y < height; ++y) {
 		for (size_t x = 0; x < width; ++x) {
@@ -633,12 +640,26 @@ void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normals
 				color = boundingBoxBuffer[index].getColor();
 			}
 
-			// Convert COLORREF to RGBA for PngWrapper
-			unsigned int b = GetRValue(color);
-			unsigned int g = GetGValue(color);
-			unsigned int r = GetBValue(color);
-			unsigned int pixelValue = (r << 24) | (g << 16) | (b << 8);
+			// Store the combined color in the temporary buffer
+			combinedBuffer[index].setColor(color);
+		}
+	}
 
+	// Apply anti-aliasing if enabled
+	if (!m_anti_aliasing_None) {
+		applyAntiAliasingByName(combinedBuffer.data(), width, height, kernelSize, filterName);
+	}
+
+	// Write the (possibly anti-aliased) combined buffer to the PNG
+	for (size_t y = 0; y < height; ++y) {
+		for (size_t x = 0; x < width; ++x) {
+			size_t index = y * width + x;
+			COLORREF color = combinedBuffer[index].getColor();
+			// Convert COLORREF to RGBA for PngWrapper
+			unsigned int b = GetBValue(color);
+			unsigned int g = GetGValue(color);
+			unsigned int r = GetRValue(color);
+			unsigned int pixelValue = (r << 24) | (g << 16) | (b << 8);
 			// Set the pixel value in the PngWrapper
 			png.SetValue(static_cast<unsigned int>(x), static_cast<unsigned int>(y), pixelValue);
 		}
@@ -653,17 +674,13 @@ void saveCombinedBufferToPNG(Point* bgBuffer, Point* edgesBuffer, Point* normals
 }
 
 
-
-
 void StretchBackgroundToBuffer(Point* bgBuffer, int* bgImageData, int bgWidth, int bgHeight, size_t width, size_t height) {
 	for (size_t y = 0; y < height; y++) {
 		for (size_t x = 0; x < width; x++) {
 			int srcX = static_cast<int>((static_cast<float>(x) / width) * bgWidth);
 			int srcY = static_cast<int>((static_cast<float>(y) / height) * bgHeight);
-
 			// Get the color from the background image
 			int color = bgImageData[srcY * bgWidth + srcX];
-
 			// Keep it in RGB format
 			bgBuffer[y * width + x] = Point(static_cast<float>(x), static_cast<float>(y), 1.0f, 1.0f, color);
 		}
@@ -688,10 +705,13 @@ void RepeatBackgroundToBuffer(Point* bgBuffer, int* bgImageData, int bgWidth, in
 
 int ind = 0;
 
-void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer, 
-									Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, 
-									int width, int height, CDC* pDC, COLORREF bg_color, Vector4 cameraPosition,COLORREF fog_color, bool use_fog
-) {
+void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer,
+	Point* normalsBuffer, Point* polygonsBuffer,
+	Point* boundingBoxBuffer,
+	int width, int height, CDC* pDC, COLORREF bg_color,
+	Vector4 cameraPosition,
+	COLORREF fog_color, bool use_fog,
+	int kernelSize, const std::string& filterName) {
 	BITMAPINFO bmi = {};
 	bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	bmi.bmiHeader.biWidth = width;
@@ -713,8 +733,9 @@ void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer,
 
 	COLORREF* pixels = static_cast<COLORREF*>(pBits);
 
-	CCGWorkView* pApp = (CCGWorkView*)AfxGetApp();
-	CCGWorkApp* cApp = (CCGWorkApp*)AfxGetApp();
+	// Temporary buffer to store the rendered image for anti-aliasing
+	std::vector<Point> renderedBuffer(width * height);
+
 	for (int y = 0; y < height; ++y) {
 		for (int x = 0; x < width; ++x) {
 			size_t index = y * width + x;
@@ -731,8 +752,8 @@ void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer,
 			if (polygonsBuffer && polygonsBuffer[index].z < FLT_MAX) { // Polygons take priority
 
 				const Poly* p = polygonsBuffer[index].getPolygon();  // Pointer to Poly
-				COLORREF baseColor = polygonsBuffer[index].getColor();
-				color = shade_polygon(p, baseColor, cameraPosition, m_nLightShading == ID_LIGHT_SHADING_FLAT);
+				color = polygonsBuffer[index].getColor();
+				color = shade_polygon(p, color, cameraPosition, m_nLightShading == ID_LIGHT_SHADING_FLAT);
 				// Apply fog based on the distance z
 				if (use_fog) {
 					float obj_z = polygonsBuffer[index].z;
@@ -746,9 +767,23 @@ void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer,
 			if (boundingBoxBuffer && boundingBoxBuffer[index].getColor() != RGB(0, 0, 0)) {
 				color = boundingBoxBuffer[index].getColor();
 			}
-			
 
-			pixels[index] = color; // Assign the final color
+			// Assign the color to the pixels and store it in the rendered buffer
+			pixels[index] = color;
+
+			// Populate the rendered buffer for anti-aliasing
+			renderedBuffer[index].setColor(color);
+			renderedBuffer[index].z = 0; // Set depth to a neutral value since it's not used for display
+		}
+	}
+
+	// Apply anti-aliasing on the rendered buffer
+	if (!m_anti_aliasing_None) {
+		applyAntiAliasingByName(renderedBuffer.data(), width, height, kernelSize, filterName);
+
+		// Copy anti-aliased data back to the pixels buffer
+		for (int i = 0; i < width * height; ++i) {
+			pixels[i] = renderedBuffer[i].getColor();
 		}
 	}
 
@@ -837,12 +872,10 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 	if (m_draw_bounding_box) {
 		boundingBoxBuffer = initZBuffer(width, height);
 	}
-	int x = 0;
 	// Process polygons
 	for (Poly* poly : *scene.getPolygons()) {
 		if (m_solid_rendering && polygonsBuffer) {
-			int i=renderPolygon(polygonsBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling);
-			x = x + i;
+			renderPolygon(polygonsBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling);
 		}
 		if (edgesBuffer) {
 			DrawPolygonEdgesAndVertexNormals(edgesBuffer, width, height, poly, cameraPosition, white, pApp->vertex_normals_color);
@@ -851,11 +884,11 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 			DrawPolygonNormal(normalsBuffer, width, height, poly, pApp->poly_normals_color);
 		}
 	}
+	std::string filterName = "None";
+	int kernelSize = m_anti_aliasing_5x5 ? 5 : 3;
 	// Apply anti-aliasing after rendering
 	if (polygonsBuffer && !m_anti_aliasing_None) {
-		int kernelSize = m_anti_aliasing_5x5 ? 5 : 3;
 
-		std::string filterName;
 		if (m_anti_aliasing_Box) {
 			filterName = "Box";
 		}
@@ -868,8 +901,6 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 		else if (m_anti_aliasing_Sinc) {
 			filterName = "Sinc";
 		}
-		applyAntiAliasingByName(polygonsBuffer, width, height, kernelSize, filterName);
-
 	}
 
 	// Draw bounding box if enabled
@@ -879,11 +910,16 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 
 	// Render to screen or save to file
 	if (m_render_to_screen) {
-		renderToBitmap(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, pDC, pApp->Background_color,cameraPosition, pApp->fog_color, m_fog_effects_on);
+		renderToBitmap(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, 
+			width, height, pDC, pApp->Background_color,cameraPosition, pApp->fog_color, 
+			m_fog_effects_on, kernelSize, filterName);
 	}
 	else {
 		m_render_to_screen = true;
-		saveCombinedBufferToPNG(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, width, height, "..\\..\\combined_output.png",cameraPosition, pApp->Background_color, m_nLightShading == ID_LIGHT_SHADING_FLAT, m_fog_effects_on, pApp->fog_color);
+		saveCombinedBufferToPNG(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer,
+			width, height, "..\\..\\combined_output.png",cameraPosition,
+			pApp->Background_color, m_nLightShading == ID_LIGHT_SHADING_FLAT, 
+			m_fog_effects_on, pApp->fog_color, m_anti_aliasing_None,kernelSize, filterName);
 	}
 
 	// Cleanup buffers

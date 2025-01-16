@@ -66,11 +66,11 @@ inline float computeBarycentric(float x, float y,
 
 
 // Render a polygon using scan-line rasterization and Z-buffering
-int renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& polygon,
+void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& polygon,
     const Vector4& cameraPosition, bool doBackFaceCulling) {
     const std::vector<Vertex>& vertices = polygon.getVertices();
     if (vertices.size() < 3) {
-        return 0;
+        return;
     }
 
     // Early bounds check for completely off-screen polygons
@@ -88,7 +88,7 @@ int renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& polyg
 
     // Early exit if polygon is completely off screen
     if (maxX < 0 || minX >= width || maxY < 0 || minY >= height) {
-        return 0;
+        return;
     }
 
     // Back-face culling optimization
@@ -99,7 +99,7 @@ int renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& polyg
         const Vector4 viewVector = (cameraPosition - vertices[0]).normalize();
 
         if (normal.dot(viewVector) <= 0) {
-            return 0;
+            return;
         }
     }
 
@@ -166,6 +166,6 @@ int renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& polyg
         }
     }
 
-    return 1;
+    return;
 }
 

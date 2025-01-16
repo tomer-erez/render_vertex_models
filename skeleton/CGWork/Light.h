@@ -56,8 +56,8 @@ public:
     
     LightParams():
 	enabled(false),type(LIGHT_TYPE_DIRECTIONAL),space(LIGHT_SPACE_VIEW),
-	colorR(128),colorG(128),colorB(128),posX(500),posY(-1000),posZ(0),
-	dirX(0),dirY(1),dirZ(0)
+	colorR(110),colorG(110),colorB(110),posX(500),posY(1000),posZ(0),
+	dirX(0),dirY(0),dirZ(-1)
     {}
 
     

@@ -163,7 +163,8 @@ private:
 	void OnBackGroundImageStretch();
 	void OnBackGroundImageOn();
 	void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, int width, 
-		int height, CDC* pDC, COLORREF bg_color, Vector4 cameraPosition, COLORREF fog_color, bool use_fog);
+		int height, CDC* pDC, COLORREF bg_color, Vector4 cameraPosition, COLORREF fog_color, bool use_fog, int kernelSize, const std::string& filterName);
+
 protected:
 	//{{AFX_MSG(CCGWorkView)
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
