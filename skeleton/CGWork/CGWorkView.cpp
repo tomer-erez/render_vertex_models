@@ -662,7 +662,6 @@ void saveCombinedBufferToPNG(
 			unsigned int g = GetGValue(color);
 			unsigned int r = GetRValue(color);
 			unsigned int pixelValue = (r << 24) | (g << 16) | (b << 8);
-
 			// Set the pixel value in the PngWrapper
 			png.SetValue(static_cast<unsigned int>(x), static_cast<unsigned int>(y), pixelValue);
 		}
