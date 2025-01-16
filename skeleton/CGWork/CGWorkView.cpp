@@ -1103,34 +1103,35 @@ void CCGWorkView::OnFileLoadBackGroundImage() {
 }
 
 
+#include "CTessellationDialog.h"
 
 void CCGWorkView::OnFileLoad() {
+
 	TCHAR szFilters[] = _T("IRIT Data Files (*.itd)|*.itd|All Files (*.*)|*.*||");
 
 	CFileDialog dlg(TRUE, _T("itd"), _T("*.itd"), OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, szFilters);
 
-	if (dlg.DoModal() == IDOK) {
+	if (dlg.DoModal() == IDOK) { // Show the file load dialog
 		m_strItdFileName = dlg.GetPathName(); // Full path and filename
-		scene.clear(); // Clear the existing scene data
-		//scene.hasBoundingBox = true;
+			scene.clear(); // Clear the existing scene data
 
-		// Load and process the IRIT file
-		CGSkelProcessIritDataFiles(m_strItdFileName, 1);
+			// Load and process the IRIT file with the selected tessellation level
+			CGSkelProcessIritDataFiles(m_strItdFileName, 1);
 
-		// Calculate bounding box and determine initial transformation
-		Matrix4 t = getMatrixToCenterObject();
-		scene.calculateVertexNormals();
-		scene.applyTransform(t);
-		double scene_min_z = scene.minz;
-		Matrix4 zBack = Matrix4::translate(0, 0, -scene.minz);
-		scene.applyTransform(zBack);
-		scene.calculateVertexNormals();
+			// Calculate bounding box and determine initial transformation
+			Matrix4 t = getMatrixToCenterObject();
+			scene.calculateVertexNormals();
+			scene.applyTransform(t);
+			double scene_min_z = scene.minz;
+			Matrix4 zBack = Matrix4::translate(0, 0, -scene.minz);
+			scene.applyTransform(zBack);
+			scene.calculateVertexNormals();
 
+			scene.updateIsFirstDraw(false);
 
-		scene.updateIsFirstDraw(false);
-
-		Invalidate(); // Trigger WM_PAINT for redraw
+			Invalidate(); // Trigger WM_PAINT for redraw
 	}
+	
 }
 
 

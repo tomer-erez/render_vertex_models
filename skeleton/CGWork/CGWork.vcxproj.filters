@@ -90,6 +90,9 @@
     <ClCompile Include="AntiAliasing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CTessellationDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CGWork.rc">
@@ -242,6 +245,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AntiAliasing.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CTessellationDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
