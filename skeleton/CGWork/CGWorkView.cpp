@@ -837,11 +837,12 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 	if (m_draw_bounding_box) {
 		boundingBoxBuffer = initZBuffer(width, height);
 	}
-
+	int x = 0;
 	// Process polygons
 	for (Poly* poly : *scene.getPolygons()) {
 		if (m_solid_rendering && polygonsBuffer) {
-			renderPolygon(polygonsBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling);
+			int i=renderPolygon(polygonsBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling);
+			x = x + i;
 		}
 		if (edgesBuffer) {
 			DrawPolygonEdgesAndVertexNormals(edgesBuffer, width, height, poly, cameraPosition, white, pApp->vertex_normals_color);

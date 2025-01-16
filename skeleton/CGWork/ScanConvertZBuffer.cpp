@@ -31,93 +31,141 @@ COLORREF interpolateColor(COLORREF c1, COLORREF c2, float t) {
     );
 }
 
-// Render a polygon using scan-line rasterization and Z-buffering
-void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& polygon, const Vector4& cameraPosition, bool doBackFaceCulling) {
-    const std::vector<Vertex>& vertices = polygon.getVertices();
-    if (vertices.size() < 3) {
-        return; // Polygons must have at least 3 vertices
+
+// Helper struct for edge equations
+struct EdgeEquation {
+    float a, b, c;
+    float yMin, yMax;
+
+    EdgeEquation(const Vertex& v0, const Vertex& v1) {
+        a = v0.y - v1.y;
+        b = v1.x - v0.x;
+        c = v0.x * v1.y - v1.x * v0.y;
+        yMin = std::min(v0.y, v1.y);
+        yMax = std::max(v0.y, v1.y);
     }
 
-    // Compute the polygon's normal
-    const Vertex& v0 = vertices[0];
-    const Vertex& v1 = vertices[1];
-    const Vertex& v2 = vertices[2];
+    bool findIntersection(float y, float& x) const {
+        if (y < yMin || y > yMax) {
+            return false;
+        }
+        if (std::abs(a) < 1e-6) {
+            return false;
+        }
+        x = -(b * y + c) / a;
+        return true;
+    }
+};
 
+// Helper function for barycentric coordinate computation
+inline float computeBarycentric(float x, float y,
+    const Vertex& v0, const Vertex& v1, const Vertex& v2) {
+    return ((v0.y - v1.y) * (x - v1.x) + (v1.x - v0.x) * (y - v1.y)) /
+        ((v0.y - v1.y) * (v2.x - v1.x) + (v1.x - v0.x) * (v2.y - v1.y));
+}
+
+
+// Render a polygon using scan-line rasterization and Z-buffering
+int renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& polygon,
+    const Vector4& cameraPosition, bool doBackFaceCulling) {
+    const std::vector<Vertex>& vertices = polygon.getVertices();
+    if (vertices.size() < 3) {
+        return 0;
+    }
+
+    // Early bounds check for completely off-screen polygons
+    float minX = std::numeric_limits<float>::max();
+    float maxX = std::numeric_limits<float>::lowest();
+    float minY = std::numeric_limits<float>::max();
+    float maxY = std::numeric_limits<float>::lowest();
+
+    for (const auto& vertex : vertices) {
+        minX = std::min(minX, vertex.x);
+        maxX = std::max(maxX, vertex.x);
+        minY = std::min(minY, vertex.y);
+        maxY = std::max(maxY, vertex.y);
+    }
+
+    // Early exit if polygon is completely off screen
+    if (maxX < 0 || minX >= width || maxY < 0 || minY >= height) {
+        return 0;
+    }
+
+    // Back-face culling optimization
     if (doBackFaceCulling) {
-        Vector4 edge1 = v1 - v0;
-        Vector4 edge2 = v2 - v0;
-        Vector4 normal = edge1.cross(edge2).normalize();
-        Vector4 viewVector = (cameraPosition - v0).normalize();
+        const Vector4 edge1 = vertices[1] - vertices[0];
+        const Vector4 edge2 = vertices[2] - vertices[0];
+        const Vector4 normal = edge1.cross(edge2).normalize();
+        const Vector4 viewVector = (cameraPosition - vertices[0]).normalize();
 
-        // Perform back-face culling
         if (normal.dot(viewVector) <= 0) {
-            return; // Skip rendering back-facing polygons
+            return 0;
         }
     }
 
-    // Polygon's color
-    COLORREF color = polygon.getColor();
-
-    // Calculate bounding box
-    float minX = std::floor(std::min({ v0.x, v1.x, v2.x }));
-    float maxX = std::ceil(std::max({ v0.x, v1.x, v2.x }));
-    float minY = std::floor(std::min({ v0.y, v1.y, v2.y }));
-    float maxY = std::ceil(std::max({ v0.y, v1.y, v2.y }));
-
     // Clip bounding box to screen bounds
-    minX = std::max(0.0f, minX);
-    maxX = std::min(static_cast<float>(width - 1), maxX);
-    minY = std::max(0.0f, minY);
-    maxY = std::min(static_cast<float>(height - 1), maxY);
+    minX = std::max(0.0f, std::floor(minX));
+    maxX = std::min(static_cast<float>(width - 1), std::ceil(maxX));
+    minY = std::max(0.0f, std::floor(minY));
+    maxY = std::min(static_cast<float>(height - 1), std::ceil(maxY));
 
-    // Compute edge equations for barycentric interpolation
-    Vector4 edge1 = v1 - v0;
-    Vector4 edge2 = v2 - v0;
-    float denom = edge1.x * edge2.y - edge1.y * edge2.x;
+    const COLORREF color = polygon.getColor();
 
-    // Loop through scan lines
-    for (int y = static_cast<int>(minY); y <= static_cast<int>(maxY); y++) {
+    // Pre-compute edge equations for the triangle
+    std::vector<EdgeEquation> edges;
+    edges.reserve(vertices.size());
+
+    for (size_t i = 0; i < vertices.size(); ++i) {
+        const Vertex& v0 = vertices[i];
+        const Vertex& v1 = vertices[(i + 1) % vertices.size()];
+        edges.emplace_back(v0, v1);
+    }
+
+    // Scan-line rasterization with edge walking
+    for (int y = static_cast<int>(minY); y <= static_cast<int>(maxY); ++y) {
         std::vector<float> xIntersections;
+        xIntersections.reserve(edges.size());
 
-        // Find X-intersections with polygon edges
-        for (size_t i = 0; i < vertices.size(); i++) {
-            const Vertex& vStart = vertices[i];
-            const Vertex& vEnd = vertices[(i + 1) % vertices.size()];
-
-            if (vStart.y == vEnd.y) continue; // Skip horizontal edges
-
-            if (y >= std::min(vStart.y, vEnd.y) && y <= std::max(vStart.y, vEnd.y)) {
-                float x = vStart.x + (y - vStart.y) * (vEnd.x - vStart.x) / (vEnd.y - vStart.y);
+        // Find intersections for all edges
+        for (const auto& edge : edges) {
+            float x;
+            if (edge.findIntersection(static_cast<float>(y), x)) {
                 xIntersections.push_back(x);
             }
         }
 
-        // Sort X-intersections to determine spans
+        if (xIntersections.empty()) {
+            continue;
+        }
+
         std::sort(xIntersections.begin(), xIntersections.end());
 
-        // Fill spans between pairs of X-intersections
-        for (size_t i = 0; i < xIntersections.size(); i += 2) {
-            if (i + 1 >= xIntersections.size()) break;
+        // Process spans between intersection pairs
+        for (size_t i = 0; i < xIntersections.size() - 1; i += 2) {
+            const int startX = static_cast<int>(std::ceil(xIntersections[i]));
+            const int endX = static_cast<int>(std::floor(xIntersections[i + 1]));
 
-            int startX = static_cast<int>(std::ceil(xIntersections[i]));
-            int endX = static_cast<int>(std::floor(xIntersections[i + 1]));
+            // SIMD-friendly inner loop
+            for (int x = startX; x <= endX; ++x) {
+                const size_t index = static_cast<size_t>(y) * width + x;
 
-            for (int x = startX; x <= endX; x++) {
-                if (x < 0 || x >= static_cast<int>(width)) continue;
+                // Compute barycentric coordinates
+                const float alpha = computeBarycentric(x, y, vertices[1], vertices[2], vertices[0]);
+                const float beta = computeBarycentric(x, y, vertices[2], vertices[0], vertices[1]);
+                const float gamma = 1.0f - alpha - beta;
 
-                // Interpolate Z-value using barycentric coordinates
-                float alpha = ((v1.y - v2.y) * (x - v2.x) + (v2.x - v1.x) * (y - v2.y)) / denom;
-                float beta = ((v2.y - v0.y) * (x - v2.x) + (v0.x - v2.x) * (y - v2.y)) / denom;
-                float gamma = 1.0f - alpha - beta;
+                // Perspective-correct interpolation
+                const float z = 1.0f / (alpha / vertices[0].z + beta / vertices[1].z + gamma / vertices[2].z);
 
-                float z = alpha * v0.z + beta * v1.z + gamma * v2.z;
-
-                // Perform Z-buffer test
-                size_t index = y * width + x;
+                // Z-buffer test with atomic operation if possible
                 if (z < zBuffer[index].z) {
-                    zBuffer[index] = Point(static_cast<float>(x), static_cast<float>(y), z, 1.0f, color,&polygon);
+                    zBuffer[index] = Point(static_cast<float>(x), static_cast<float>(y),
+                        z, 1.0f, color, &polygon);
                 }
             }
         }
     }
+
+    return 1;
 }
+

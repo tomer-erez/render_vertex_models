@@ -25,7 +25,7 @@ void applyAntiAliasingByName(Point* buffer, int width, int height, int kernelSiz
                 // Initialize sums for RGB values and weight sum
                 float sumR = 0, sumG = 0, sumB = 0, weightSum = 0;
                 int halfSize = kernelSize / 2;  // Calculate half the kernel size (e.g., 3x3 -> halfSize = 1)
-                halfSize = halfSize + 2;
+                //halfSize = halfSize + 2;
                 // Iterate over the kernel (a square around the point)
                 for (int j = -halfSize; j <= halfSize; ++j) {  // Loop vertically within the kernel
                     for (int i = -halfSize; i <= halfSize; ++i) {  // Loop horizontally within the kernel
@@ -44,6 +44,9 @@ void applyAntiAliasingByName(Point* buffer, int width, int height, int kernelSiz
 
                         // Apply appropriate weight based on the selected filter type
                         if (filterName == "Box") {
+                            if (i == 0 && j == 0) {
+                                weight = 0;
+                            }
                             // Box filter: uniform weight of 1 for all neighboring points
                             weight = 1.0f;
                         }
@@ -60,12 +63,13 @@ void applyAntiAliasingByName(Point* buffer, int width, int height, int kernelSiz
                         else if (filterName == "Sinc") {
                             float r = std::sqrt(i * i + j * j);  // Distance from the center
                             if (r <= halfSize) {
-                                float window = 0.5f * (1 - cos(3.14159265f * r / halfSize));  // Apply Hann window
-                                weight = window * ((r == 0) ? 1.0f : sin(3.14159265f * r) / (3.14159265f * r));
-                                weight = max(0.2f, weight);  // Clamp negative weights to 0
+                                // Sinc function with Hann window
+                                float sincValue = (r == 0) ? 1.0f : sin(3.14159265f * r) / (3.14159265f * r);  // Sinc function
+                                float hannWindow = 0.5f * (1 - cos(3.14159265f * r / halfSize));  // Hann window
+                                weight = sincValue * hannWindow;  // Combine sinc and Hann window
                             }
                             else {
-                                weight = 0.0f;  // Ignore contributions outside the kernel
+                                weight = 0.0f;  // Outside kernel range
                             }
                         }
 
