@@ -191,6 +191,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</BrowseInformation>
     </ClCompile>
+    <ClCompile Include="CTessellationDialog.cpp" />
     <ClCompile Include="Edge.cpp" />
     <ClCompile Include="iritSkel.cpp" />
     <ClCompile Include="LightDialog.cpp" />
@@ -240,6 +241,7 @@
     <ClInclude Include="CGWork.h" />
     <ClInclude Include="CGWorkDoc.h" />
     <ClInclude Include="CGWorkView.h" />
+    <ClInclude Include="CTessellationDialog.h" />
     <ClInclude Include="Edge.h" />
     <ClInclude Include="iritSkel.h" />
     <ClInclude Include="Light.h" />

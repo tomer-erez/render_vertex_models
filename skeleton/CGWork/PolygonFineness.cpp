@@ -6,6 +6,7 @@
 #include "afxdialogex.h"
 #include "iritSkel.h"
 
+extern IPFreeformConvStateStruct CGSkelFFCState;
 
 // PolygonFineness dialog
 
@@ -25,40 +26,43 @@ void PolygonFineness::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_SLIDER_FINENESS, sliderForPolyFineness);
+
+	CGSkelFFCState.FineNess = sliderForPolyFineness.GetPos();;
+	int pause = 0;
 }
 
 void PolygonFineness::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 {
-	// TODO: Add your message handler code here and/or call default
-	
-
 	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
 
-	sliderForPolyFineness.SetPos(pApp->p_slider_polyFineness_value);
-	if (pScrollBar->GetSafeHwnd() == sliderForPolyFineness.GetSafeHwnd())
-	{
+	if (pScrollBar->GetSafeHwnd() == sliderForPolyFineness.GetSafeHwnd()) {
 		// Update slider value
+		int sliderValue = sliderForPolyFineness.GetPos();
+		pApp->p_slider_polyFineness_value = sliderValue;
+		CGSkelFFCState.FineNess = sliderValue;
 
-		pApp->p_slider_polyFineness_value = sliderForPolyFineness.GetPos();
-		CGSkelFFCState.FineNess = sliderForPolyFineness.GetPos();
-
+		TRACE("Slider moved. New value: %d\n", sliderValue);
 	}
 
 	CDialog::OnHScroll(nSBCode, nPos, pScrollBar);
 }
-
 BOOL PolygonFineness::OnInitDialog() {
 	CDialog::OnInitDialog();
 
 	CCGWorkApp* pApp = (CCGWorkApp*)AfxGetApp();
 
+	// Initialize slider range and position
 	sliderForPolyFineness.SetRange(2, 60);
-	sliderForPolyFineness.SetPos(pApp->p_slider_polyFineness_value);
 
+	// Use the current fineness value to set the slider position
+	int initialValue = static_cast<int>(CGSkelFFCState.FineNess);
+	sliderForPolyFineness.SetPos(initialValue);
 
-	return TRUE;
+	TRACE("Slider initialized to: %d\n", initialValue);
 
+	return TRUE; // Return TRUE unless you set focus to a control
 }
+
 
 
 BEGIN_MESSAGE_MAP(PolygonFineness, CDialog)
