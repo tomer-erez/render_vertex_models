@@ -101,10 +101,10 @@ BOOL CCGWorkApp::InitInstance()
 	nearPlane = 0.1;
 	farPlane=1000.0;
 	
-	m_lMaterialAmbient = 0.6;
-	m_lMaterialDiffuse = 0.8;
-	m_lMaterialSpecular = 1.0;
-	m_lMaterialShininess = 1.0;
+	m_lMaterialAmbient = 0.85;
+	m_lMaterialDiffuse = 0.75;
+	m_lMaterialSpecular = 0.0;
+	m_lMaterialShininess = 0.49;
 
 	m_lights[LIGHT_ID_1].enabled = true;
 

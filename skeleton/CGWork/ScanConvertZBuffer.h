@@ -1,6 +1,5 @@
 #ifndef SCAN_CONVERT_ZBUFFER_H
 #define SCAN_CONVERT_ZBUFFER_H
-
 #include "Point.h"
 #include "Poly.h"
 #include "Vertex.h"
@@ -14,6 +13,6 @@ Point* initZBuffer(size_t width, size_t height);
 void freeZBuffer(Point* zBuffer);
 
 // Render a polygon using scan conversion and Z-buffering
-void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& polygon, const Vector4& cameraPosition, bool doBackFaceCulling);
+void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& polygon, const Vector4& cameraPosition, bool doBackFaceCulling, bool applyMarbleTexture, bool applyWoodTexture);
 
 #endif // SCAN_CONVERT_ZBUFFER_H

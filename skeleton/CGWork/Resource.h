@@ -116,13 +116,16 @@
 #define ID_FOGEFFECTS_ON                32843
 #define ID_FOGEFFECTS_ON32844           32844
 #define ID_FOGEFFECTS_COLOR             32845
+#define ID_3DVOLUMETRICTEXTURE_NONE     32846
+#define ID_3DVOLUMETRICTEXTURE_WOOD     32847
+#define ID_3DVOLUMETRICTEXTURE_MARBLE   32848
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        151
-#define _APS_NEXT_COMMAND_VALUE         32846
+#define _APS_NEXT_COMMAND_VALUE         32849
 #define _APS_NEXT_CONTROL_VALUE         1049
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

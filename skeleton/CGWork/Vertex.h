@@ -17,6 +17,8 @@ public:
     Vertex(float x, float y, float z, float w);
     Vertex(float x, float y, float z);
     Vertex(const Vector4& position, const Normal& normalFromFile, bool normalProvidedFromFile);
+        
+    double transperancy = 0;
 
     // Assignment operator from Vector4
     Vertex& operator=(const Vector4& v);
