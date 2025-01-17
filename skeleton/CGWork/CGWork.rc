@@ -159,6 +159,12 @@ BEGIN
         MENUITEM "on",                          ID_FOGEFFECTS_ON
         MENUITEM "color",                       ID_FOGEFFECTS_COLOR
     END
+    POPUP "3D volumetric texture"
+    BEGIN
+        MENUITEM "None",                        ID_3DVOLUMETRICTEXTURE_NONE
+        MENUITEM "wood",                        ID_3DVOLUMETRICTEXTURE_WOOD
+        MENUITEM "marble",                      ID_3DVOLUMETRICTEXTURE_MARBLE
+    END
 END
 
 

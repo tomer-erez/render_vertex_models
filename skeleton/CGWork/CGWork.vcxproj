@@ -210,6 +210,7 @@
     <ClCompile Include="Matrix4.cpp" />
     <ClCompile Include="MouseSensitivityDlg.cpp" />
     <ClCompile Include="Normal.cpp" />
+    <ClCompile Include="perlin.cpp" />
     <ClCompile Include="PerspectiveDlg.cpp" />
     <ClCompile Include="PngWrapper.cpp" />
     <ClCompile Include="Point.cpp" />
@@ -252,6 +253,8 @@
     <ClInclude Include="Matrix4.h" />
     <ClInclude Include="MouseSensitivityDlg.h" />
     <ClInclude Include="Normal.h" />
+    <ClInclude Include="perlin.h" />
+    <ClInclude Include="PerlinNoise.hpp" />
     <ClInclude Include="PerspectiveDlg.h" />
     <ClInclude Include="PngWrapper.h" />
     <ClInclude Include="Point.h" />

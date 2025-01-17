@@ -174,6 +174,16 @@ BEGIN_MESSAGE_MAP(CCGWorkView, CView)
 	ON_COMMAND(ID_FOGEFFECTS_ON, &CCGWorkView::OnFogEffectsOn)
 	ON_UPDATE_COMMAND_UI(ID_FOGEFFECTS_ON, &CCGWorkView::OnUpdateFogEffectsOn)
 
+	ON_COMMAND(ID_3DVOLUMETRICTEXTURE_NONE, &CCGWorkView::On3dVolumetricNone)
+	ON_UPDATE_COMMAND_UI(ID_3DVOLUMETRICTEXTURE_NONE, &CCGWorkView::OnUpdate3dVolumetricNone)
+	ON_COMMAND(ID_3DVOLUMETRICTEXTURE_WOOD, &CCGWorkView::On3dVolumetricWood)
+	ON_UPDATE_COMMAND_UI(ID_3DVOLUMETRICTEXTURE_WOOD, &CCGWorkView::OnUpdate3dVolumetricWood)
+	ON_COMMAND(ID_3DVOLUMETRICTEXTURE_MARBLE, &CCGWorkView::On3dVolumetricMarle)
+	ON_UPDATE_COMMAND_UI(ID_3DVOLUMETRICTEXTURE_MARBLE, &CCGWorkView::OnUpdate3dVolumetricMarble)
+
+
+
+
 	ON_COMMAND(ID_LIGHT_MATERIAL, OnMaterialDlg)
 	
 	ON_WM_LBUTTONDOWN()
@@ -241,6 +251,16 @@ CCGWorkView::CCGWorkView()
 	m_anti_aliasing_Sinc = false;
 	m_anti_aliasing_Gaussian = false;
 	m_fog_effects_on = false;
+	m_3DVOLUMETRICTEXTURE_MARBLE = false;
+	m_3DVOLUMETRICTEXTURE_WOOD = false;
+	m_3DVOLUMETRICTEXTURE_NONE = true;
+
+
+		/*
+		ID_3DVOLUMETRICTEXTURE_MARBLE
+		ID_3DVOLUMETRICTEXTURE_WOOD
+		ID_3DVOLUMETRICTEXTURE_NONE
+		*/
 }
 
 CCGWorkView::~CCGWorkView()
@@ -458,7 +478,10 @@ COLORREF apply_fog(COLORREF objectColor, COLORREF fogColor, float pixel_z, float
 	}
 
 	// Calculate fog factor (linear interpolation)
-	float fogFactor = 1.0f - exp(-0.005 * (pixel_z - fogStart));
+	float fogFactor = (pixel_z - fogStart) / (fogEnd - fogStart);
+
+	// Reduce the fog effect for more moderate blending
+	fogFactor = pow(fogFactor, 1.35f);  // Apply a power function to make the transition smoother
 
 	// Blend object color with fog color
 	BYTE r = (BYTE)((1 - fogFactor) * GetRValue(objectColor) + fogFactor * GetRValue(fogColor));
@@ -467,6 +490,7 @@ COLORREF apply_fog(COLORREF objectColor, COLORREF fogColor, float pixel_z, float
 
 	return RGB(r, g, b);
 }
+
 
 
 
@@ -796,6 +820,13 @@ void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer,
 }
 
 
+void threeDmarble() {
+
+}
+void threeDwood() {
+
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CCGWorkView drawing
@@ -872,10 +903,11 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 	if (m_draw_bounding_box) {
 		boundingBoxBuffer = initZBuffer(width, height);
 	}
+
 	// Process polygons
 	for (Poly* poly : *scene.getPolygons()) {
 		if (m_solid_rendering && polygonsBuffer) {
-			renderPolygon(polygonsBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling);
+			renderPolygon(polygonsBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling, m_3DVOLUMETRICTEXTURE_MARBLE, m_3DVOLUMETRICTEXTURE_WOOD);
 		}
 		if (edgesBuffer) {
 			DrawPolygonEdgesAndVertexNormals(edgesBuffer, width, height, poly, cameraPosition, white, pApp->vertex_normals_color);
@@ -884,6 +916,8 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 			DrawPolygonNormal(normalsBuffer, width, height, poly, pApp->poly_normals_color);
 		}
 	}
+
+
 	std::string filterName = "None";
 	int kernelSize = m_anti_aliasing_5x5 ? 5 : 3;
 	// Apply anti-aliasing after rendering
@@ -1104,8 +1138,9 @@ void CCGWorkView::OnFileLoadBackGroundImage() {
 
 
 #include "CTessellationDialog.h"
-
+#include "perlin.h"
 void CCGWorkView::OnFileLoad() {
+	initializePermutation();
 
 	TCHAR szFilters[] = _T("IRIT Data Files (*.itd)|*.itd|All Files (*.*)|*.*||");
 
@@ -2055,4 +2090,45 @@ void CCGWorkView::OnFogEffectsOn() {
 }
 void CCGWorkView::OnUpdateFogEffectsOn(CCmdUI* pCmdUI) {
 	pCmdUI->SetCheck(m_fog_effects_on == true);
+}
+
+void CCGWorkView::On3dVolumetricNone() {
+	m_3DVOLUMETRICTEXTURE_MARBLE = false;
+	m_3DVOLUMETRICTEXTURE_WOOD = false;
+	m_3DVOLUMETRICTEXTURE_NONE = true;
+	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_MARBLE, false);
+	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_WOOD, false);
+	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_NONE, true);
+}
+
+void CCGWorkView::OnUpdate3dVolumetricNone(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_3DVOLUMETRICTEXTURE_NONE == true);
+
+}
+
+
+void CCGWorkView::On3dVolumetricWood() {
+	m_3DVOLUMETRICTEXTURE_MARBLE = false;
+	m_3DVOLUMETRICTEXTURE_WOOD = true;
+	m_3DVOLUMETRICTEXTURE_NONE = false;
+	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_MARBLE, false);
+	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_WOOD, true);
+	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_NONE, false);
+}
+void CCGWorkView::OnUpdate3dVolumetricWood(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_3DVOLUMETRICTEXTURE_WOOD == true);
+
+}
+
+void CCGWorkView::On3dVolumetricMarle() {
+	m_3DVOLUMETRICTEXTURE_MARBLE = true;
+	m_3DVOLUMETRICTEXTURE_WOOD = false;
+	m_3DVOLUMETRICTEXTURE_NONE = false;
+	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_MARBLE, true);
+	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_WOOD, false);
+	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_NONE, false);
+}
+void CCGWorkView::OnUpdate3dVolumetricMarble(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_3DVOLUMETRICTEXTURE_MARBLE == true);
+
 }

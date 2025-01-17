@@ -1,10 +1,22 @@
 #define NOMINMAX // Prevent min and max macros from being defined
 #include "ScanConvertZBuffer.h"
 #include "Point.h"
-
+#include "perlin.h"
+#include "AntiAliasing.h"
+#include <algorithm>  // For std::clamp
+#include <vector>
+#include <omp.h>      // OpenMP for parallelization
+#include <string>
+#include <cmath>      // For exp, sqrt, sin
 #include <algorithm> // For std::min, std::max
 #include <cstdlib>   // For malloc and free
 #include <cfloat>    // For FLT_MAX
+
+
+template <typename T>
+T clamp(T val, T minVal, T maxVal) {
+    return std::max(minVal, std::min(maxVal, val));
+}
 
 // Initialize the Z-buffer
 Point* initZBuffer(size_t width, size_t height) {
@@ -64,10 +76,52 @@ inline float computeBarycentric(float x, float y,
         ((v0.y - v1.y) * (v2.x - v1.x) + (v1.x - v0.x) * (v2.y - v1.y));
 }
 
+const float M_PI = 3.14159265f; // Define the value of PI as a float
+const float B = 4.0f / M_PI;    // Precompute constants for sine approximation
+const float C = -4.0f / (M_PI * M_PI);
+
+
+
+COLORREF generateMarbleTexture(float x, float y, float z) {
+    float noise = perlinNoise3D(x * 0.05f, y * 0.05f, z * 0.05f); // Lower frequency
+    float veins = std::sin(x * 0.1f + noise * 5.0f) * 0.5f + 0.5f;
+    return RGB(veins * 255, veins * 255, veins * 255); // Grayish marble
+}
+
+
+COLORREF generateWoodTexture(float x, float y, float z) {
+    // Scale coordinates for vertical grain effect
+    float grainX = x * 0.02f; // Stretch along x-axis
+    float grainY = y * 0.1f;  // Tighten along y-axis
+    float grainZ = z * 0.02f;
+
+    // Generate base noise
+    float noise = perlinNoise3D(grainX, grainY, grainZ);
+
+    // Combine with higher frequency noise for finer details
+    float fineNoise = perlinNoise3D(grainX * 5.0f, grainY * 5.0f, grainZ * 5.0f);
+    noise += fineNoise * 0.2f; // Blend detail noise (reduce influence)
+
+    // Apply a sine wave for grain effect
+    float grain = std::fmod(grainY + noise * 0.5f, 1.0f);
+
+    // Smooth out the transitions (optional: use smoothstep)
+    grain = grain * grain * (3 - 2 * grain); // Smooth transition
+
+    // Enhance contrast
+    grain = std::pow(grain, 1.5f); // Adjust the power for desired effect
+
+    // Map to a wood-like color
+    float b = 139 * grain + 30; // Adjust red component
+    float g = 69 * grain + 15;  // Adjust green component
+    float r = 19 * grain + 10;  // Adjust blue component
+
+    return RGB(static_cast<int>(r), static_cast<int>(g), static_cast<int>(b));
+}
 
 // Render a polygon using scan-line rasterization and Z-buffering
 void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& polygon,
-    const Vector4& cameraPosition, bool doBackFaceCulling) {
+    const Vector4& cameraPosition, bool doBackFaceCulling, bool applyMarbleTexture, bool applyWoodTexture) {
     const std::vector<Vertex>& vertices = polygon.getVertices();
     if (vertices.size() < 3) {
         return;
@@ -109,7 +163,7 @@ void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& poly
     minY = std::max(0.0f, std::floor(minY));
     maxY = std::min(static_cast<float>(height - 1), std::ceil(maxY));
 
-    const COLORREF color = polygon.getColor();
+    COLORREF color = polygon.getColor();
 
     // Pre-compute edge equations for the triangle
     std::vector<EdgeEquation> edges;
@@ -156,7 +210,20 @@ void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& poly
 
                 // Perspective-correct interpolation
                 const float z = 1.0f / (alpha / vertices[0].z + beta / vertices[1].z + gamma / vertices[2].z);
+                if (applyMarbleTexture || applyWoodTexture) {
+                    float worldX = alpha * vertices[0].x + beta * vertices[1].x + gamma * vertices[2].x;
+                    float worldY = alpha * vertices[0].y + beta * vertices[1].y + gamma * vertices[2].y;
+                    float worldZ = alpha * vertices[0].z + beta * vertices[1].z + gamma * vertices[2].z;
 
+                    if (applyMarbleTexture) {
+                        color = generateMarbleTexture(worldX, worldY, worldZ);
+                    }
+                    else if (applyWoodTexture) {
+                        color = generateWoodTexture(worldX, worldY, worldZ);
+                    }
+
+                }
+   
                 // Z-buffer test with atomic operation if possible
                 if (z < zBuffer[index].z) {
                     zBuffer[index] = Point(static_cast<float>(x), static_cast<float>(y),

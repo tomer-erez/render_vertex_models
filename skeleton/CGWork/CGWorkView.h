@@ -74,11 +74,12 @@ public:
 	LightParams m_lights[MAX_LIGHT];	//configurable lights array
 	LightParams m_ambientLight;		//ambient light (only RGB is used)
 	CPoint prev_start;
-	
 	bool m_directional_light;
 	bool m_positional_light;
-
 	bool m_fog_effects_on;
+	bool m_3DVOLUMETRICTEXTURE_MARBLE;
+	bool m_3DVOLUMETRICTEXTURE_WOOD;
+	bool m_3DVOLUMETRICTEXTURE_NONE;
 
 
 	// Overrides
@@ -278,6 +279,19 @@ protected:
 	// Gaussian Anti-aliasing
 	afx_msg void OnFogEffectsOn();
 	afx_msg void OnUpdateFogEffectsOn(CCmdUI* pCmdUI);
+
+	// 3d volumetric none
+	afx_msg void On3dVolumetricNone();
+	afx_msg void OnUpdate3dVolumetricNone(CCmdUI* pCmdUI);
+
+	// 3d volumetric wood
+	afx_msg void On3dVolumetricWood();
+	afx_msg void OnUpdate3dVolumetricWood(CCmdUI* pCmdUI);
+
+	// 3d volumetric marble
+	afx_msg void On3dVolumetricMarle();
+	afx_msg void OnUpdate3dVolumetricMarble(CCmdUI* pCmdUI);
+
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 public:
