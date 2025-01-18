@@ -58,11 +58,26 @@ void applyAntiAliasingByName(Point* buffer, int width, int height, int kernelSiz
                         else if (filterName == "Sinc") {
                             float r = std::sqrt(i * i + j * j);
                             if (r <= halfSize) {
-                                float sincValue = (r == 0) ? 1.0f : std::sin(PI * r) / (PI * r);
-                                float hannWindow = 0.5f * (1 - std::cos(PI * r / halfSize));
+                                // Polynomial approximation of sinc
+                                float sincValue;
+                                if (r == 0) {
+                                    sincValue = 1.0f;
+                                }
+                                else {
+                                    float x = r;
+                                    sincValue = 1.0f - (PI * PI * x * x) / 6.0f + (PI * PI * PI * PI * x * x * x * x) / 120.0f;
+                                }
+
+                                // Polynomial approximation of Hann window
+                                float hannWindow = (PI * PI * r * r) / (4.0f * halfSize * halfSize)
+                                    - (PI * PI * PI * PI * r * r * r * r) / (96.0f * halfSize * halfSize * halfSize * halfSize);
+
+                                // Combined weight
                                 weight = sincValue * hannWindow;
+                                weight = clamp(weight, 0.0f, 255.0f);
                             }
                         }
+
 
                         // Accumulate weighted RGB values
                         sumR += r * weight;

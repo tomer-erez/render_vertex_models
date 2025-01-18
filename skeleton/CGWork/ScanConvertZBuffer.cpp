@@ -81,7 +81,6 @@ const float B = 4.0f / M_PI;    // Precompute constants for sine approximation
 const float C = -4.0f / (M_PI * M_PI);
 
 
-
 COLORREF generateMarbleTexture(float x, float y, float z) {
     float noise = perlinNoise3D(x * 0.05f, y * 0.05f, z * 0.05f); // Lower frequency
     float veins = std::sin(x * 0.1f + noise * 5.0f) * 0.5f + 0.5f;
