@@ -1,105 +1,139 @@
-#include "AntiAliasing.h"
-#include <algorithm>  // For std::clamp
+#include <omp.h>
 #include <vector>
-#include <omp.h>      // OpenMP for parallelization
+#include <cmath>
+#include <windows.h>
+#include "AntiAliasing.h"
+#include <algorithm>
+#include <vector>
+#include <omp.h>
 #include <string>
+#include "Point.h"
 #include <cmath>      // For exp, sqrt, sin
+#include <cstdlib>    // For malloc and free
+#include <windows.h>  // For GetRValue, GetGValue, GetBValue
+enum ColorChannel { RED, GREEN, BLUE };
 
-double PI = 3.141592653589793;
-
+// Clamp function
 template <typename T>
-T clamp(T val, T minVal, T maxVal) {
+inline T clamp(T val, T minVal, T maxVal) {
     return max(minVal, min(maxVal, val));
 }
 
-void applyAntiAliasingByName(Point* buffer, int width, int height, int kernelSize, const std::string& filterName) {
-    // Validate kernel size
-    if (kernelSize != 3 && kernelSize != 5) {
-        throw std::invalid_argument("Unsupported kernel size. Use 3 or 5.");
+// Linear interpolation
+inline float lerpit(float a, float b, float t) {
+    return a + t * (b - a);
+}
+
+// Interpolate channel
+inline float interpolateChannel(const Point& p00, const Point& p10, const Point& p01, const Point& p11,
+    float wx, float wy, ColorChannel channel) {
+    float i1, i2;
+    if (channel == RED) {
+        i1 = lerpit(GetRValue(p00.getColor()), GetRValue(p10.getColor()), wx);
+        i2 = lerpit(GetRValue(p01.getColor()), GetRValue(p11.getColor()), wx);
     }
+    else if (channel == GREEN) {
+        i1 = lerpit(GetGValue(p00.getColor()), GetGValue(p10.getColor()), wx);
+        i2 = lerpit(GetGValue(p01.getColor()), GetGValue(p11.getColor()), wx);
+    }
+    else {  // BLUE
+        i1 = lerpit(GetBValue(p00.getColor()), GetBValue(p10.getColor()), wx);
+        i2 = lerpit(GetBValue(p01.getColor()), GetBValue(p11.getColor()), wx);
+    }
+    return lerpit(i1, i2, wy);
+}
 
-    // Parallelize the nested loops using OpenMP for faster performance
-#pragma omp parallel for collapse(2)
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            Point& point = buffer[y * width + x];
+// Precompute weights for a given filter
+std::vector<float> precomputeWeights(int ssaaFactor, const std::string& filterName) {
+    const float step = 1.0f / ssaaFactor;
+    std::vector<float> weights(ssaaFactor * ssaaFactor);
+    float weightSum = 0.0f;
 
-            if (point.z < 99999) { // Apply the filter only for valid depth values
-
-                float sumR = 0, sumG = 0, sumB = 0, weightSum = 0;
-                int halfSize = kernelSize / 2;
-                for (int j = -halfSize; j <= halfSize; ++j) {
-                    for (int i = -halfSize; i <= halfSize; ++i) {
-                        // Calculate neighboring coordinates
-                        int sampleX = clamp(x + i, 0, width - 1);
-                        int sampleY = clamp(y + j, 0, height - 1);
-                        Point& sample = buffer[sampleY * width + sampleX];
-
-                        // Extract RGB components
-                        COLORREF color = sample.getColor();
-                        float r = static_cast<float>(GetRValue(color));
-                        float g = static_cast<float>(GetGValue(color));
-                        float b = static_cast<float>(GetBValue(color));
-
-                        // Calculate weight based on the selected filter
-                        float weight = 0.0f;
-
-                        if (filterName == "Box") {
-                            weight = 1.0f; // Uniform weight
-                        }
-                        else if (filterName == "Triangle") {
-                            float distance = std::sqrt(i * i + j * j);
-                            weight = max(0.0f, (halfSize - distance) / halfSize);
-                        }
-                        else if (filterName == "Gaussian") {
-                            float sigma = 1.0f;
-                            weight = std::exp(-(i * i + j * j) / (2 * sigma * sigma));
-                        }
-                        else if (filterName == "Sinc") {
-                            float r = std::sqrt(i * i + j * j);
-                            if (r <= halfSize) {
-                                // Polynomial approximation of sinc
-                                float sincValue;
-                                if (r == 0) {
-                                    sincValue = 1.0f;
-                                }
-                                else {
-                                    float x = r;
-                                    sincValue = 1.0f - (PI * PI * x * x) / 6.0f + (PI * PI * PI * PI * x * x * x * x) / 120.0f;
-                                }
-
-                                // Polynomial approximation of Hann window
-                                float hannWindow = (PI * PI * r * r) / (4.0f * halfSize * halfSize)
-                                    - (PI * PI * PI * PI * r * r * r * r) / (96.0f * halfSize * halfSize * halfSize * halfSize);
-
-                                // Combined weight
-                                weight = sincValue * hannWindow;
-                                weight = clamp(weight, 0.0f, 255.0f);
-                            }
-                        }
-
-
-                        // Accumulate weighted RGB values
-                        sumR += r * weight;
-                        sumG += g * weight;
-                        sumB += b * weight;
-                        weightSum += weight;
-                    }
-                }
-
-                // Normalize weights to avoid division by zero
-                if (weightSum == 0.0f) weightSum = 1.0f;
-
-                // Compute final color
-                
-                point.setColor(RGB(
-                    static_cast<int>(clamp(sumR / weightSum, 0.0f, 255.0f)),
-                    static_cast<int>(clamp(sumG / weightSum, 0.0f, 255.0f)),
-                    static_cast<int>(clamp(sumB / weightSum, 0.0f, 255.0f))
-                ));
-                
-                //point.setColor(RGB(0, 0, 0));
+    if (filterName == "Gaussian") {
+        const float sigma = 0.5f;
+        for (int sy = 0; sy < ssaaFactor; ++sy) {
+            for (int sx = 0; sx < ssaaFactor; ++sx) {
+                float dx = (sx + 0.5f) * step - 0.5f;
+                float dy = (sy + 0.5f) * step - 0.5f;
+                float weight = std::exp(-(dx * dx + dy * dy) / (2.0f * sigma * sigma));
+                weights[sy * ssaaFactor + sx] = weight;
+                weightSum += weight;
             }
         }
+    }
+    else if (filterName == "Triangle") {
+        for (int sy = 0; sy < ssaaFactor; ++sy) {
+            for (int sx = 0; sx < ssaaFactor; ++sx) {
+                float dx = std::fabs((sx + 0.5f) * step - 0.5f);
+                float dy = std::fabs((sy + 0.5f) * step - 0.5f);
+                float weight = max(0.0f, 1.0f - (dx + dy));
+                weights[sy * ssaaFactor + sx] = weight;
+                weightSum += weight;
+            }
+        }
+    }
+    else {
+        for (int i = 0; i < ssaaFactor * ssaaFactor; ++i) {
+            weights[i] = 1.0f;  // Box filter
+            weightSum += 1.0f;
+        }
+    }
+
+    for (float& weight : weights) {
+        weight /= weightSum;
+    }
+    return weights;
+}
+
+// Apply anti-aliasing
+void applyAntiAliasingByName(Point* buffer, int width, int height, int kernelSize, const std::string& filterName) {
+    const int ssaaFactor = kernelSize;
+    const float step = 1.0f / ssaaFactor;
+    const auto weights = precomputeWeights(ssaaFactor, filterName);
+
+    std::vector<Point> resultBuffer(width * height);
+
+#pragma omp parallel for schedule(dynamic)
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            float sumR = 0.0f, sumG = 0.0f, sumB = 0.0f;
+
+            for (int sy = 0; sy < ssaaFactor; ++sy) {
+                for (int sx = 0; sx < ssaaFactor; ++sx) {
+                    float subX = x + (sx + 0.5f) * step;
+                    float subY = y + (sy + 0.5f) * step;
+
+                    int x0 = clamp(static_cast<int>(std::floor(subX)), 0, width - 1);
+                    int y0 = clamp(static_cast<int>(std::floor(subY)), 0, height - 1);
+                    int x1 = clamp(x0 + 1, 0, width - 1);
+                    int y1 = clamp(y0 + 1, 0, height - 1);
+
+                    const Point& p00 = buffer[y0 * width + x0];
+                    const Point& p10 = buffer[y0 * width + x1];
+                    const Point& p01 = buffer[y1 * width + x0];
+                    const Point& p11 = buffer[y1 * width + x1];
+
+                    float wx = subX - x0;
+                    float wy = subY - y0;
+
+                    float weight = weights[sy * ssaaFactor + sx];
+
+                    sumR += interpolateChannel(p00, p10, p01, p11, wx, wy, RED) * weight;
+                    sumG += interpolateChannel(p00, p10, p01, p11, wx, wy, GREEN) * weight;
+                    sumB += interpolateChannel(p00, p10, p01, p11, wx, wy, BLUE) * weight;
+                }
+            }
+
+            resultBuffer[y * width + x].setColor(RGB(
+                static_cast<int>(clamp(sumR, 0.0f, 255.0f)),
+                static_cast<int>(clamp(sumG, 0.0f, 255.0f)),
+                static_cast<int>(clamp(sumB, 0.0f, 255.0f))
+            ));
+        }
+    }
+
+#pragma omp parallel for
+    for (int i = 0; i < width * height; ++i) {
+        buffer[i] = resultBuffer[i];
     }
 }
