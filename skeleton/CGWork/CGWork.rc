@@ -145,7 +145,7 @@ BEGIN
         MENUITEM "stretch",                     ID_BACKGROUNDIMAGE_STRETCH, CHECKED
         MENUITEM "load",                        ID_BACKGROUNDIMAGE_LOAD
     END
-    POPUP "anti aliasing"
+    POPUP "anti aliasing TO FILE!"
     BEGIN
         MENUITEM "None",                        ID_ANTIALIASING_NONE
         MENUITEM "box",                         ID_ANTIALIASING_BOX
