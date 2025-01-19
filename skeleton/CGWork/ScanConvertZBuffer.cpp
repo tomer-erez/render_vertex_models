@@ -82,9 +82,18 @@ const float C = -4.0f / (M_PI * M_PI);
 
 
 COLORREF generateMarbleTexture(float x, float y, float z) {
-    float noise = perlinNoise3D(x * 0.05f, y * 0.05f, z * 0.05f); // Lower frequency
-    float veins = std::sin(x * 0.1f + noise * 5.0f) * 0.5f + 0.5f;
-    return RGB(veins * 255, veins * 255, veins * 255); // Grayish marble
+    // Use world-space scaling for better continuity
+    float noise = perlinNoise3D(x * 0.01f, y * 0.01f, z * 0.01f);
+
+    // Add finer details with fractal turbulence
+    float turbulence = fractalNoise(x * 0.05f, y * 0.05f, z * 0.05f);
+
+    // Compute veins with turbulence
+    float veins = std::sin(x * 0.1f + noise * 10.0f + turbulence * 5.0f) * 0.5f + 0.5f;
+
+    // Return smooth grayscale
+    int gray = static_cast<int>(veins * 255.0f);
+    return RGB(gray, gray, gray);
 }
 
 

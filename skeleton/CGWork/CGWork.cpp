@@ -88,8 +88,8 @@ BOOL CCGWorkApp::InitInstance()
 	s_slider_value = 1;
 	p_slider_polyFineness_value = CGSkelFFCState.FineNess;
 
-	Object_color = RGB(255, 255, 255);
-	Background_color = RGB(0, 0, 0);
+	Object_color = RGB(211, 133, 28);
+	Background_color = RGB(255, 255, 255);
 	fog_color = RGB(65,65,65);
 
 	poly_normals_color = RGB(255, 0, 255);

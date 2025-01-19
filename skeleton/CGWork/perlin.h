@@ -19,3 +19,4 @@ float dot(const float* g, float x, float y, float z);
 float fade(float t);
 float lerp(float a, float b, float t);
 float perlinNoise3D(float x, float y, float z);
+float fractalNoise(float x, float y, float z, int octaves = 4, float persistence = 0.5f);
