@@ -87,7 +87,7 @@ std::vector<float> precomputeWeights(int ssaaFactor, const std::string& filterNa
 
 // Apply anti-aliasing
 void applyAntiAliasingByName(Point* buffer, int width, int height, int kernelSize, const std::string& filterName) {
-    const int ssaaFactor = kernelSize;
+    const int ssaaFactor = kernelSize+6;
     const float step = 1.0f / ssaaFactor;
     const auto weights = precomputeWeights(ssaaFactor, filterName);
 

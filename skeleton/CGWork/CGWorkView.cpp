@@ -680,9 +680,9 @@ void saveCombinedBufferToPNG(
 			size_t index = y * width + x;
 			COLORREF color = combinedBuffer[index].getColor();
 			// Convert COLORREF to RGBA for PngWrapper
-			unsigned int b = GetBValue(color);
+			unsigned int r = GetBValue(color);
 			unsigned int g = GetGValue(color);
-			unsigned int r = GetRValue(color);
+			unsigned int b = GetRValue(color);
 			unsigned int pixelValue = (r << 24) | (g << 16) | (b << 8);
 			// Set the pixel value in the PngWrapper
 			png.SetValue(static_cast<unsigned int>(x), static_cast<unsigned int>(y), pixelValue);
@@ -942,19 +942,35 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 		DrawBoundingBox(boundingBoxBuffer, width, height, scene.getBoundingBox(), green);
 	}
 
-	// Render to screen or save to file
-	if (m_render_to_screen) {
-		renderToBitmap(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer, 
-			width, height, pDC, pApp->Background_color,cameraPosition, pApp->fog_color, 
-			m_fog_effects_on, kernelSize, filterName);
+	//if apply anti aliasing, do it once, and to file!
+	if (!m_anti_aliasing_None) {
+		saveCombinedBufferToPNG(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer,
+			width, height, "..\\..\\output_image.png", cameraPosition,
+			pApp->Background_color, m_nLightShading == ID_LIGHT_SHADING_FLAT,
+			m_fog_effects_on, pApp->fog_color, m_anti_aliasing_None, kernelSize, filterName);
+		m_render_to_screen = true;
+		m_anti_aliasing_None = true;
+		m_anti_aliasing_Box = false;
+		m_anti_aliasing_Triangle = false;
+		m_anti_aliasing_Gaussian = false;
+		m_anti_aliasing_Sinc = false;
 	}
 	else {
-		m_render_to_screen = true;
-		saveCombinedBufferToPNG(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer,
-			width, height, "..\\..\\combined_output.png",cameraPosition,
-			pApp->Background_color, m_nLightShading == ID_LIGHT_SHADING_FLAT, 
-			m_fog_effects_on, pApp->fog_color, m_anti_aliasing_None,kernelSize, filterName);
+		// Render to screen or save to file
+		if (m_render_to_screen) {
+			renderToBitmap(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer,
+				width, height, pDC, pApp->Background_color, cameraPosition, pApp->fog_color,
+				m_fog_effects_on, kernelSize, filterName);
+		}
+		else {
+			m_render_to_screen = true;
+			saveCombinedBufferToPNG(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer,
+				width, height, "..\\..\\combined_output.png", cameraPosition,
+				pApp->Background_color, m_nLightShading == ID_LIGHT_SHADING_FLAT,
+				m_fog_effects_on, pApp->fog_color, m_anti_aliasing_None, kernelSize, filterName);
+		}
 	}
+
 
 	// Cleanup buffers
 	if (bgBuffer) freeZBuffer(bgBuffer);
