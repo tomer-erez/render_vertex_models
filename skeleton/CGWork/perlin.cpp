@@ -83,3 +83,24 @@ float perlinNoise3D(float x, float y, float z) {
             lerp(u, dot(grad3[permutation[AB + 1] % 12], x, y - 1, z - 1),
                 dot(grad3[permutation[BB + 1] % 12], x - 1, y - 1, z - 1))));
 }
+
+
+
+float fractalNoise(float x, float y, float z, int octaves , float persistence ) {
+    float total = 0.0f;     // Final accumulated noise
+    float amplitude = 1.0f; // Initial amplitude
+    float frequency = 1.0f; // Initial frequency
+    float maxValue = 0.0f;  // Used for normalization
+
+    for (int i = 0; i < octaves; ++i) {
+        // Accumulate noise with increasing frequency and decreasing amplitude
+        total += perlinNoise3D(x * frequency, y * frequency, z * frequency) * amplitude;
+
+        maxValue += amplitude; // Track the max value for normalization
+        amplitude *= persistence; // Decrease amplitude for the next octave
+        frequency *= 2.0f;        // Increase frequency for the next octave
+    }
+
+    // Normalize the result to range [0, 1]
+    return total / maxValue;
+}
