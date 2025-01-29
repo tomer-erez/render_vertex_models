@@ -97,7 +97,7 @@ BOOL CCGWorkApp::InitInstance()
 
 	d = 15;
 	fovy = 45;
-	aspectRatio=16.0/9.0;
+	aspectRatio=16.0f/9.0f;
 	nearPlane = 0.1;
 	farPlane=1000.0;
 	

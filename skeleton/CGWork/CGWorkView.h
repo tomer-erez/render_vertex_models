@@ -166,6 +166,9 @@ private:
 	void renderToBitmap(Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer, Point* polygonsBuffer, Point* boundingBoxBuffer, int width, 
 		int height, CDC* pDC, COLORREF bg_color, Vector4 cameraPosition, COLORREF fog_color, bool use_fog, int kernelSize, const std::string& filterName);
 
+	void PerspectiveView(Point* polygonsBuffer, int width, int height);
+	void PerspectiveTransformPoly();
+
 protected:
 	//{{AFX_MSG(CCGWorkView)
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
@@ -198,6 +201,8 @@ protected:
 	afx_msg void OnLightShadingGouraud();
 	afx_msg void OnUpdateLightShadingGouraud(CCmdUI* pCmdUI);
 	afx_msg void OnLightConstants();
+	afx_msg void OnLightShadingPhong();
+	afx_msg void OnUpdateLightShadingPhong(CCmdUI* pCmdUI);
 
 	afx_msg void OnPerspectiveParameters();
 	afx_msg void OnOptionsMousesensitivity();

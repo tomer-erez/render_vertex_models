@@ -84,6 +84,8 @@ BEGIN_MESSAGE_MAP(CCGWorkView, CView)
 	ON_COMMAND(ID_LIGHT_SHADING_GOURAUD, OnLightShadingGouraud)
 	ON_UPDATE_COMMAND_UI(ID_LIGHT_SHADING_GOURAUD, OnUpdateLightShadingGouraud)
 	ON_COMMAND(ID_LIGHT_CONSTANTS, OnLightConstants)
+	ON_COMMAND(ID_SHADING_PHONG, OnLightShadingPhong)
+	ON_UPDATE_COMMAND_UI(ID_SHADING_PHONG, OnUpdateLightShadingPhong)
 
 	ON_COMMAND(ID_OPTIONS_PERSPECTIVECONTROL, OnPerspectiveParameters)
 	ON_COMMAND(ID_OPTIONS_MOUSESENSITIVITY, &CCGWorkView::OnOptionsMousesensitivity)
@@ -104,94 +106,94 @@ BEGIN_MESSAGE_MAP(CCGWorkView, CView)
 
 	//poly from file
 // Polygon normals not from file
-	ON_COMMAND(ID_VIEW_POLYGONNORMALSNOTFROM, OnPolyNormalsNotFrom)
-	ON_UPDATE_COMMAND_UI(ID_VIEW_POLYGONNORMALSNOTFROM, OnUpdatePolyNormalsNotFrom)
-	// Polygon normals from file
-	ON_COMMAND(ID_VIEW_POLYGONNORMALSFROM, OnPolyNormalsFrom)
-	ON_UPDATE_COMMAND_UI(ID_VIEW_POLYGONNORMALSFROM, OnUpdatePolyNormalsFrom)
-	// Vertex normals from file
-	ON_COMMAND(ID_VIEW_VERTEXNORMALSFROM, OnVertexNormalsFrom)
-	ON_UPDATE_COMMAND_UI(ID_VIEW_VERTEXNORMALSFROM, OnUpdateVertexNormalsFrom)
-	// Vertex normals not from file
-	ON_COMMAND(ID_VIEW_VERTEXNORMALSNOTFROM, OnVertexNormalsNotFrom)
-	ON_UPDATE_COMMAND_UI(ID_VIEW_VERTEXNORMALSNOTFROM, OnUpdateVertexNormalsNotFrom)
+ON_COMMAND(ID_VIEW_POLYGONNORMALSNOTFROM, OnPolyNormalsNotFrom)
+ON_UPDATE_COMMAND_UI(ID_VIEW_POLYGONNORMALSNOTFROM, OnUpdatePolyNormalsNotFrom)
+// Polygon normals from file
+ON_COMMAND(ID_VIEW_POLYGONNORMALSFROM, OnPolyNormalsFrom)
+ON_UPDATE_COMMAND_UI(ID_VIEW_POLYGONNORMALSFROM, OnUpdatePolyNormalsFrom)
+// Vertex normals from file
+ON_COMMAND(ID_VIEW_VERTEXNORMALSFROM, OnVertexNormalsFrom)
+ON_UPDATE_COMMAND_UI(ID_VIEW_VERTEXNORMALSFROM, OnUpdateVertexNormalsFrom)
+// Vertex normals not from file
+ON_COMMAND(ID_VIEW_VERTEXNORMALSNOTFROM, OnVertexNormalsNotFrom)
+ON_UPDATE_COMMAND_UI(ID_VIEW_VERTEXNORMALSNOTFROM, OnUpdateVertexNormalsNotFrom)
 
-	ON_COMMAND(ID_VIEW_VIEW, &CCGWorkView::OnViewView)
-	ON_COMMAND(ID_VIEW_OBJECT, &CCGWorkView::OnViewObject)
+ON_COMMAND(ID_VIEW_VIEW, &CCGWorkView::OnViewView)
+ON_COMMAND(ID_VIEW_OBJECT, &CCGWorkView::OnViewObject)
 
-	ON_UPDATE_COMMAND_UI(ID_VIEW_VIEW, &CCGWorkView::OnUpdateViewView)
-	ON_UPDATE_COMMAND_UI(ID_VIEW_OBJECT, &CCGWorkView::OnUpdateViewObject)
+ON_UPDATE_COMMAND_UI(ID_VIEW_VIEW, &CCGWorkView::OnUpdateViewView)
+ON_UPDATE_COMMAND_UI(ID_VIEW_OBJECT, &CCGWorkView::OnUpdateViewObject)
 
-	ON_COMMAND(ID_VIEW_DRAW_SILS, &CCGWorkView::OnDrawSilhouettes)
-	ON_UPDATE_COMMAND_UI(ID_VIEW_DRAW_SILS, &CCGWorkView::OnUpdateDrawSilhouettes)
-	
-	ON_COMMAND(ID_DRAWS_FLIP_NORMALS, &CCGWorkView::OnFlipNormals)
-	ON_UPDATE_COMMAND_UI(ID_DRAWS_FLIP_NORMALS, &CCGWorkView::OnUpdateFlipNormals)
+ON_COMMAND(ID_VIEW_DRAW_SILS, &CCGWorkView::OnDrawSilhouettes)
+ON_UPDATE_COMMAND_UI(ID_VIEW_DRAW_SILS, &CCGWorkView::OnUpdateDrawSilhouettes)
 
-	ON_COMMAND(ID_RENDER_TOFILE, &CCGWorkView::OnRenderToFile)
-	ON_UPDATE_COMMAND_UI(ID_RENDER_TOFILE, &CCGWorkView::OnUpdateRenderToFile)
+ON_COMMAND(ID_DRAWS_FLIP_NORMALS, &CCGWorkView::OnFlipNormals)
+ON_UPDATE_COMMAND_UI(ID_DRAWS_FLIP_NORMALS, &CCGWorkView::OnUpdateFlipNormals)
 
-	ON_COMMAND(ID_RENDER_TOSCREEN, &CCGWorkView::OnRenderToScreen)
-	ON_UPDATE_COMMAND_UI(ID_RENDER_TOSCREEN, &CCGWorkView::OnUpdateRenderToScreen)
+ON_COMMAND(ID_RENDER_TOFILE, &CCGWorkView::OnRenderToFile)
+ON_UPDATE_COMMAND_UI(ID_RENDER_TOFILE, &CCGWorkView::OnUpdateRenderToFile)
 
-	ON_COMMAND(ID_VIEW_BACKFACECULLING, &CCGWorkView::OnBackFaceCulling)
-	ON_UPDATE_COMMAND_UI(ID_VIEW_BACKFACECULLING, &CCGWorkView::OnUpdateBackFaceCulling)
+ON_COMMAND(ID_RENDER_TOSCREEN, &CCGWorkView::OnRenderToScreen)
+ON_UPDATE_COMMAND_UI(ID_RENDER_TOSCREEN, &CCGWorkView::OnUpdateRenderToScreen)
 
-	ON_COMMAND(ID_VIEW_SOLIDRENDERING, &CCGWorkView::OnSolidRendering)
-	ON_UPDATE_COMMAND_UI(ID_VIEW_SOLIDRENDERING, &CCGWorkView::OnUpdateSolidRendering)
+ON_COMMAND(ID_VIEW_BACKFACECULLING, &CCGWorkView::OnBackFaceCulling)
+ON_UPDATE_COMMAND_UI(ID_VIEW_BACKFACECULLING, &CCGWorkView::OnUpdateBackFaceCulling)
 
-	ON_COMMAND(ID_BACKGROUNDIMAGE_STRETCH, &CCGWorkView::OnBackGroundImageStretch)
-	ON_UPDATE_COMMAND_UI(ID_BACKGROUNDIMAGE_STRETCH, &CCGWorkView::OnUpdateBackGroundImageStretch)
+ON_COMMAND(ID_VIEW_SOLIDRENDERING, &CCGWorkView::OnSolidRendering)
+ON_UPDATE_COMMAND_UI(ID_VIEW_SOLIDRENDERING, &CCGWorkView::OnUpdateSolidRendering)
 
-	ON_COMMAND(ID_BACKGROUNDIMAGE_ON, &CCGWorkView::OnBackGroundImageOn)
-	ON_UPDATE_COMMAND_UI(ID_BACKGROUNDIMAGE_ON, &CCGWorkView::OnUpdateBackGroundImageOn)
+ON_COMMAND(ID_BACKGROUNDIMAGE_STRETCH, &CCGWorkView::OnBackGroundImageStretch)
+ON_UPDATE_COMMAND_UI(ID_BACKGROUNDIMAGE_STRETCH, &CCGWorkView::OnUpdateBackGroundImageStretch)
 
-	// 5x5 Anti-aliasing
-	ON_COMMAND(ID_ANTIALIASING_5X5, &CCGWorkView::OnAntiAliasing5x5)
-	ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_5X5, &CCGWorkView::OnUpdateAntiAliasing5x5)
+ON_COMMAND(ID_BACKGROUNDIMAGE_ON, &CCGWorkView::OnBackGroundImageOn)
+ON_UPDATE_COMMAND_UI(ID_BACKGROUNDIMAGE_ON, &CCGWorkView::OnUpdateBackGroundImageOn)
 
-	// None Anti-aliasing
-	ON_COMMAND(ID_ANTIALIASING_NONE, &CCGWorkView::OnAntiAliasingNone)
-	ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_NONE, &CCGWorkView::OnUpdateAntiAliasingNone)
+// 5x5 Anti-aliasing
+ON_COMMAND(ID_ANTIALIASING_5X5, &CCGWorkView::OnAntiAliasing5x5)
+ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_5X5, &CCGWorkView::OnUpdateAntiAliasing5x5)
 
-	// Box Anti-aliasing
-	ON_COMMAND(ID_ANTIALIASING_BOX, &CCGWorkView::OnAntiAliasingBox)
-	ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_BOX, &CCGWorkView::OnUpdateAntiAliasingBox)
+// None Anti-aliasing
+ON_COMMAND(ID_ANTIALIASING_NONE, &CCGWorkView::OnAntiAliasingNone)
+ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_NONE, &CCGWorkView::OnUpdateAntiAliasingNone)
 
-	// Triangle Anti-aliasing
-	ON_COMMAND(ID_ANTIALIASING_TRIANGLE, &CCGWorkView::OnAntiAliasingTriangle)
-	ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_TRIANGLE, &CCGWorkView::OnUpdateAntiAliasingTriangle)
+// Box Anti-aliasing
+ON_COMMAND(ID_ANTIALIASING_BOX, &CCGWorkView::OnAntiAliasingBox)
+ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_BOX, &CCGWorkView::OnUpdateAntiAliasingBox)
 
-	// Sinc Anti-aliasing
-	ON_COMMAND(ID_ANTIALIASING_SINC, &CCGWorkView::OnAntiAliasingSinc)
-	ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_SINC, &CCGWorkView::OnUpdateAntiAliasingSinc)
+// Triangle Anti-aliasing
+ON_COMMAND(ID_ANTIALIASING_TRIANGLE, &CCGWorkView::OnAntiAliasingTriangle)
+ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_TRIANGLE, &CCGWorkView::OnUpdateAntiAliasingTriangle)
 
-	// Gaussian Anti-aliasing
-	ON_COMMAND(ID_ANTIALIASING_GAUSSIAN, &CCGWorkView::OnAntiAliasingGaussian)
-	ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_GAUSSIAN, &CCGWorkView::OnUpdateAntiAliasingGaussian)
+// Sinc Anti-aliasing
+ON_COMMAND(ID_ANTIALIASING_SINC, &CCGWorkView::OnAntiAliasingSinc)
+ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_SINC, &CCGWorkView::OnUpdateAntiAliasingSinc)
 
-	// fog effects
-	ON_COMMAND(ID_FOGEFFECTS_ON, &CCGWorkView::OnFogEffectsOn)
-	ON_UPDATE_COMMAND_UI(ID_FOGEFFECTS_ON, &CCGWorkView::OnUpdateFogEffectsOn)
+// Gaussian Anti-aliasing
+ON_COMMAND(ID_ANTIALIASING_GAUSSIAN, &CCGWorkView::OnAntiAliasingGaussian)
+ON_UPDATE_COMMAND_UI(ID_ANTIALIASING_GAUSSIAN, &CCGWorkView::OnUpdateAntiAliasingGaussian)
 
-	ON_COMMAND(ID_3DVOLUMETRICTEXTURE_NONE, &CCGWorkView::On3dVolumetricNone)
-	ON_UPDATE_COMMAND_UI(ID_3DVOLUMETRICTEXTURE_NONE, &CCGWorkView::OnUpdate3dVolumetricNone)
-	ON_COMMAND(ID_3DVOLUMETRICTEXTURE_WOOD, &CCGWorkView::On3dVolumetricWood)
-	ON_UPDATE_COMMAND_UI(ID_3DVOLUMETRICTEXTURE_WOOD, &CCGWorkView::OnUpdate3dVolumetricWood)
-	ON_COMMAND(ID_3DVOLUMETRICTEXTURE_MARBLE, &CCGWorkView::On3dVolumetricMarle)
-	ON_UPDATE_COMMAND_UI(ID_3DVOLUMETRICTEXTURE_MARBLE, &CCGWorkView::OnUpdate3dVolumetricMarble)
+// fog effects
+ON_COMMAND(ID_FOGEFFECTS_ON, &CCGWorkView::OnFogEffectsOn)
+ON_UPDATE_COMMAND_UI(ID_FOGEFFECTS_ON, &CCGWorkView::OnUpdateFogEffectsOn)
 
-
+ON_COMMAND(ID_3DVOLUMETRICTEXTURE_NONE, &CCGWorkView::On3dVolumetricNone)
+ON_UPDATE_COMMAND_UI(ID_3DVOLUMETRICTEXTURE_NONE, &CCGWorkView::OnUpdate3dVolumetricNone)
+ON_COMMAND(ID_3DVOLUMETRICTEXTURE_WOOD, &CCGWorkView::On3dVolumetricWood)
+ON_UPDATE_COMMAND_UI(ID_3DVOLUMETRICTEXTURE_WOOD, &CCGWorkView::OnUpdate3dVolumetricWood)
+ON_COMMAND(ID_3DVOLUMETRICTEXTURE_MARBLE, &CCGWorkView::On3dVolumetricMarle)
+ON_UPDATE_COMMAND_UI(ID_3DVOLUMETRICTEXTURE_MARBLE, &CCGWorkView::OnUpdate3dVolumetricMarble)
 
 
-	ON_COMMAND(ID_LIGHT_MATERIAL, OnMaterialDlg)
-	
-	ON_WM_LBUTTONDOWN()
-	ON_WM_MOUSEMOVE()
-	ON_WM_LBUTTONUP()
 
-	//}}AFX_MSG_MAP
-	ON_WM_TIMER()
+
+ON_COMMAND(ID_LIGHT_MATERIAL, OnMaterialDlg)
+
+ON_WM_LBUTTONDOWN()
+ON_WM_MOUSEMOVE()
+ON_WM_LBUTTONUP()
+
+//}}AFX_MSG_MAP
+ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
@@ -244,7 +246,7 @@ CCGWorkView::CCGWorkView()
 	prev_start = CPoint(0, 0);
 	m_do_back_face_culling = false;
 
-	m_anti_aliasing_5x5 =false;
+	m_anti_aliasing_5x5 = false;
 	m_anti_aliasing_None = true;
 	m_anti_aliasing_Box = false;
 	m_anti_aliasing_Triangle = false;
@@ -256,11 +258,11 @@ CCGWorkView::CCGWorkView()
 	m_3DVOLUMETRICTEXTURE_NONE = true;
 
 
-		/*
-		ID_3DVOLUMETRICTEXTURE_MARBLE
-		ID_3DVOLUMETRICTEXTURE_WOOD
-		ID_3DVOLUMETRICTEXTURE_NONE
-		*/
+	/*
+	ID_3DVOLUMETRICTEXTURE_MARBLE
+	ID_3DVOLUMETRICTEXTURE_WOOD
+	ID_3DVOLUMETRICTEXTURE_NONE
+	*/
 }
 
 CCGWorkView::~CCGWorkView()
@@ -491,10 +493,120 @@ COLORREF apply_fog(COLORREF objectColor, COLORREF fogColor, float pixel_z, float
 	return RGB(r, g, b);
 }
 
+Vector4 ComputeBarycentricCoords(const Vector4& P, const Vector4& A, const Vector4& B, const Vector4& C) {
+	// Compute vectors using Vector4
+	Vector4 v0 = B - A;
+	Vector4 v1 = C - A;
+	Vector4 v2 = P - A;
+
+	// Compute dot products
+	double d00 = v0.dot(v0);
+	double d01 = v0.dot(v1);
+	double d11 = v1.dot(v1);
+	double d20 = v2.dot(v0);
+	double d21 = v2.dot(v1);
+
+	// Compute denominator
+	double denom = d00 * d11 - d01 * d01;
+
+	// Compute barycentric coordinates (u, v, w)
+	double u = (d11 * d20 - d01 * d21) / denom;
+	double v = (d00 * d21 - d01 * d20) / denom;
+	double w = 1.0 - u - v;
+
+	// Return as Vector4 (u, v, w are stored in x, y, z components)
+	return Vector4(u, v, w, 0.0f); // The w component is unused
+}
+
+Vector4 GetInterpolatedNormal(const Vector4& pixelPos, const Poly* p) {
+	const std::vector<Vertex>& vertices = p->getVertices();
+
+	// Ensure we have a valid triangle
+	if (vertices.size() < 3) return Vector4(0, 0, 0, 0);
+
+	// Get vertex positions (we use Vector4 for positions)
+	Vector4 v0 = vertices[0];
+	Vector4 v1 = vertices[1];
+	Vector4 v2 = vertices[2];
+
+	// Get vertex normals (also using Vector4 for normals)
+	Vector4 n0 = vertices[0].getNormalCalculated().end;
+	Vector4 n1 = vertices[1].getNormalCalculated().end;
+	Vector4 n2 = vertices[2].getNormalCalculated().end;
+
+	// Compute Barycentric coordinates using Vector4
+	Vector4 bary = ComputeBarycentricCoords(pixelPos, v0, v1, v2);
+
+	// Interpolate normal using barycentric weights (same logic as before)
+	Vector4 interpolatedNormal = (n0 * bary.x) + (n1 * bary.y) + (n2 * bary.z);
+
+	// Normalize the result to ensure correct lighting
+	return interpolatedNormal.normalize();
+}
+
+
+COLORREF ApplyPhongShading(const Poly* p, const Vector4& pixelPosition, Vector4 cameraPosition) {
+	CCGWorkApp* cApp = (CCGWorkApp*)AfxGetApp();
+
+	// Interpolated normal at this pixel (obtained from rasterization step)
+	Vector4 interpolatedNormal = GetInterpolatedNormal(pixelPosition, p);
+	interpolatedNormal = interpolatedNormal.normalize();
+
+	// Compute view direction
+	Vector4 viewDir = (cameraPosition - pixelPosition).normalize();
+
+	// Base material color
+	COLORREF baseColor = p->getColor();
+	int baseR = GetRValue(baseColor);
+	int baseG = GetGValue(baseColor);
+	int baseB = GetBValue(baseColor);
+
+	// Initialize final color with ambient lighting
+	int pixelR = static_cast<int>(cApp->m_ambientLight.colorR * cApp->m_lMaterialAmbient * baseR / 255);
+	int pixelG = static_cast<int>(cApp->m_ambientLight.colorG * cApp->m_lMaterialAmbient * baseG / 255);
+	int pixelB = static_cast<int>(cApp->m_ambientLight.colorB * cApp->m_lMaterialAmbient * baseB / 255);
+
+	// Loop through all enabled lights
+	for (int i = LIGHT_ID_1; i < MAX_LIGHT; i++) {
+		if (cApp->m_lights[i].enabled) {
+			Vector4 dir(cApp->m_lights[i].dirX, cApp->m_lights[i].dirY, cApp->m_lights[i].dirZ);
+			Vector4 pos(cApp->m_lights[i].posX, cApp->m_lights[i].posY, cApp->m_lights[i].posZ);
+
+			// Determine light direction
+			Vector4 lightDir = (cApp->m_lights[i].type == LIGHT_TYPE_DIRECTIONAL)
+				? (dir.flip()).normalize()
+				: (pos - pixelPosition).normalize();
+
+			// Compute diffuse lighting
+			double cosTheta = max(0.0, interpolatedNormal.dot(lightDir));
+			pixelR += static_cast<int>(cApp->m_lights[i].colorR * cApp->m_lMaterialDiffuse * cosTheta);
+			pixelG += static_cast<int>(cApp->m_lights[i].colorG * cApp->m_lMaterialDiffuse * cosTheta);
+			pixelB += static_cast<int>(cApp->m_lights[i].colorB * cApp->m_lMaterialDiffuse * cosTheta);
+
+			// Compute specular lighting
+			Vector4 halfwayDir = (lightDir + viewDir).normalize();
+			double specAngle = max(0.0, interpolatedNormal.dot(halfwayDir));
+			double specular = cApp->m_lMaterialSpecular * pow(specAngle, cApp->m_lMaterialShininess);
+
+			pixelR += static_cast<int>(cApp->m_lights[i].colorR * specular);
+			pixelG += static_cast<int>(cApp->m_lights[i].colorG * specular);
+			pixelB += static_cast<int>(cApp->m_lights[i].colorB * specular);
+		}
+	}
+
+	// Clamp color values to avoid overflow
+	pixelR = std::min(255, max(0, pixelR));
+	pixelG = std::min(255, max(0, pixelG));
+	pixelB = std::min(255, max(0, pixelB));
+
+	return RGB(pixelR, pixelG, pixelB);
+}
 
 
 
-COLORREF shade_polygon(const Poly* p, COLORREF baseColor, Vector4 cameraPosition, bool isFlatShading) {
+COLORREF ApplySpotlight(const Poly* p); // declaration only
+
+COLORREF shade_polygon(const Poly* p, COLORREF baseColor, Vector4 cameraPosition, int Shading,int i,int j) {
 	CCGWorkApp* cApp = (CCGWorkApp*)AfxGetApp();  // Access the application instance
 
 	int baseB = GetBValue(baseColor);
@@ -506,12 +618,14 @@ COLORREF shade_polygon(const Poly* p, COLORREF baseColor, Vector4 cameraPosition
 	for (int j = LIGHT_ID_1; j < MAX_LIGHT; j++) {
 		if (cApp->m_lights[j].enabled) {
 			affected = true;
+			if (cApp->m_lights->type == LIGHT_TYPE_SPOTLIGHT)
+				return ApplySpotlight(p);
 		}
 	}
 	if (!affected) {
 		return baseColor;
 	}
-	if (isFlatShading) {
+	if (Shading==ID_LIGHT_SHADING_FLAT) {
 		// **Flat Shading** - Calculate color once for the entire polygon
 		r = static_cast<int>(cApp->m_ambientLight.colorR * cApp->m_lMaterialAmbient * baseR / 255);
 		g = static_cast<int>(cApp->m_ambientLight.colorG * cApp->m_lMaterialAmbient * baseG / 255);
@@ -528,7 +642,7 @@ COLORREF shade_polygon(const Poly* p, COLORREF baseColor, Vector4 cameraPosition
 				Vector4 dir(cApp->m_lights[i].dirX, cApp->m_lights[i].dirY, cApp->m_lights[i].dirZ);
 				Vector4 pos(cApp->m_lights[i].posX, cApp->m_lights[i].posY, cApp->m_lights[i].posZ);
 				Vector4 lightDir;
-				
+
 				// Directional or point light handling
 				if (cApp->m_lights[i].type == LIGHT_TYPE_DIRECTIONAL) {
 					lightDir = (dir.flip()).normalize();  // Directional light
@@ -556,16 +670,20 @@ COLORREF shade_polygon(const Poly* p, COLORREF baseColor, Vector4 cameraPosition
 		}
 
 	}
-	else {
+	else if (Shading == ID_LIGHT_SHADING_GOURAUD) {
+
+
 		// **Gouraud Shading** - Calculate color for each vertex and interpolate
 		r = g = b = 0;
 
-		const std::vector<Vertex>& vertices = p->getVertices();  // Change to Vertex instead of Point
+		const std::vector<Vertex>& vertices = p->getVertices();
 		int numVertices = vertices.size();
+
 		for (const Vertex& vertex : vertices) {
-			Vector4 normal = vertex.getNormalCalculated().end;
+			Vector4 normal = vertex.getNormalCalculated().end.normalize();
 			Vector4 viewDir = (cameraPosition - vertex).normalize();
 
+			// Ambient Component
 			int vertexR = static_cast<int>(cApp->m_ambientLight.colorR * cApp->m_lMaterialAmbient * baseR / 255);
 			int vertexG = static_cast<int>(cApp->m_ambientLight.colorG * cApp->m_lMaterialAmbient * baseG / 255);
 			int vertexB = static_cast<int>(cApp->m_ambientLight.colorB * cApp->m_lMaterialAmbient * baseB / 255);
@@ -574,16 +692,19 @@ COLORREF shade_polygon(const Poly* p, COLORREF baseColor, Vector4 cameraPosition
 				if (cApp->m_lights[i].enabled) {
 					Vector4 dir(cApp->m_lights[i].dirX, cApp->m_lights[i].dirY, cApp->m_lights[i].dirZ);
 					Vector4 pos(cApp->m_lights[i].posX, cApp->m_lights[i].posY, cApp->m_lights[i].posZ);
+
+					// Light direction
 					Vector4 lightDir = (cApp->m_lights[i].type == LIGHT_TYPE_DIRECTIONAL)
 						? (dir.flip()).normalize()
 						: (pos - vertex).normalize();
 
+					// Diffuse Component
 					double cosTheta = max(0.0, normal.dot(lightDir));
-
 					vertexR += static_cast<int>(cApp->m_lights[i].colorR * cApp->m_lMaterialDiffuse * cosTheta);
 					vertexG += static_cast<int>(cApp->m_lights[i].colorG * cApp->m_lMaterialDiffuse * cosTheta);
 					vertexB += static_cast<int>(cApp->m_lights[i].colorB * cApp->m_lMaterialDiffuse * cosTheta);
 
+					// Specular Component
 					Vector4 halfwayDir = (lightDir + viewDir).normalize();
 					double specAngle = max(0.0, normal.dot(halfwayDir));
 					double specular = cApp->m_lMaterialSpecular * pow(specAngle, cApp->m_lMaterialShininess);
@@ -594,17 +715,30 @@ COLORREF shade_polygon(const Poly* p, COLORREF baseColor, Vector4 cameraPosition
 				}
 			}
 
-			// Sum the vertex colors to average them
+			// Clamp values to 0-255
+			vertexR = std::min(255, max(0, vertexR));
+			vertexG = std::min(255, max(0, vertexG));
+			vertexB = std::min(255, max(0, vertexB));
+
+			// Sum the vertex colors
 			r += vertexR;
 			g += vertexG;
 			b += vertexB;
 		}
 
-		// Average the vertex colors
-		r /= numVertices;
-		g /= numVertices;
-		b /= numVertices;
+		// Final color averaging
+		r = std::min(255, max(0, r / numVertices));
+		g = std::min(255, max(0, g / numVertices));
+		b = std::min(255, max(0, b / numVertices));
 	}
+
+	else { //Phong Shading
+
+	Vector4 pixelPosition(i, j, 0, 1);
+
+	return ApplyPhongShading(p, pixelPosition, cameraPosition);
+	}
+
 
 	// Clamp final color values
 	r = std::min(255, max(0, r));
@@ -618,7 +752,7 @@ void saveCombinedBufferToPNG(
 	Point* bgBuffer, Point* edgesBuffer, Point* normalsBuffer,
 	Point* polygonsBuffer, Point* boundingBoxBuffer, size_t width,
 	size_t height, const std::string& filename,
-	Vector4 cameraPosition, COLORREF bg_color, bool isFlatShading, bool use_fog,
+	Vector4 cameraPosition, COLORREF bg_color, int isFlatShading, bool use_fog,
 	COLORREF fog_color, bool m_anti_aliasing_None, int kernelSize, const std::string& filterName) {
 
 	PngWrapper png(filename.c_str(), width, height);
@@ -653,7 +787,7 @@ void saveCombinedBufferToPNG(
 			if (polygonsBuffer && polygonsBuffer[index].z < FLT_MAX) {
 				const Poly* p = polygonsBuffer[index].getPolygon();  // Pointer to Poly
 				COLORREF baseColor = polygonsBuffer[index].getColor();
-				color = shade_polygon(p, baseColor, cameraPosition, isFlatShading);
+				color = shade_polygon(p, baseColor, cameraPosition, isFlatShading,x,y);
 				if (use_fog) {
 					float obj_z = polygonsBuffer[index].z;
 					color = apply_fog(color, fog_color, obj_z, scene.minz, scene.maxz);  // Example fog range and color
@@ -776,8 +910,9 @@ void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer,
 			if (polygonsBuffer && polygonsBuffer[index].z < FLT_MAX) { // Polygons take priority
 
 				const Poly* p = polygonsBuffer[index].getPolygon();  // Pointer to Poly
+				if (p == NULL) continue;
 				color = polygonsBuffer[index].getColor();
-				color = shade_polygon(p, color, cameraPosition, m_nLightShading == ID_LIGHT_SHADING_FLAT);
+				color = shade_polygon(p, color, cameraPosition, m_nLightShading ,x,y);
 				// Apply fog based on the distance z
 				if (use_fog) {
 					float obj_z = polygonsBuffer[index].z;
@@ -839,7 +974,7 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 	CString str;
 	// Log the mouse position to the status bar
 	str.Format(_T("Mouse Position: X = %d, Y = %d"), point.x, point.y);
-	STATUS_BAR_TEXT(str);  // Assuming STATUS_BAR_TEXT sets the status bar text
+	//STATUS_BAR_TEXT(str);  // Assuming STATUS_BAR_TEXT sets the status bar text
 
 	//str.Format(_T("onDraw on the %d time   \n"),ind++ );
 	//STATUS_BAR_TEXT(str);
@@ -904,6 +1039,8 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 		boundingBoxBuffer = initZBuffer(width, height);
 	}
 
+	
+
 	// Process polygons
 	for (Poly* poly : *scene.getPolygons()) {
 		if (m_solid_rendering && polygonsBuffer) {
@@ -937,6 +1074,14 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 		}
 	}
 
+
+	//////////////// perspective code goes here
+///*
+	if (m_nView == ID_VIEW_PERSPECTIVE) {
+		PerspectiveView(polygonsBuffer, width, height);
+		//PerspectiveView(edgesBuffer, width, height);
+	}
+	//*/
 	// Draw bounding box if enabled
 	if (scene.hasBoundingBox && m_draw_bounding_box && boundingBoxBuffer) {
 		DrawBoundingBox(boundingBoxBuffer, width, height, scene.getBoundingBox(), green);
@@ -946,7 +1091,7 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 	if (!m_anti_aliasing_None) {
 		saveCombinedBufferToPNG(bgBuffer, edgesBuffer, normalsBuffer, polygonsBuffer, boundingBoxBuffer,
 			width, height, "..\\..\\output_image.png", cameraPosition,
-			pApp->Background_color, m_nLightShading == ID_LIGHT_SHADING_FLAT,
+			pApp->Background_color, m_nLightShading ,
 			m_fog_effects_on, pApp->fog_color, m_anti_aliasing_None, kernelSize, filterName);
 		m_render_to_screen = true;
 		m_anti_aliasing_None = true;
@@ -1150,7 +1295,7 @@ void CCGWorkView::OnFileLoadBackGroundImage() {
 
 	AfxMessageBox(_T("Background image loaded successfully!"));
 	m_back_ground_image_was_set = true;
-}
+	}
 
 
 #include "CTessellationDialog.h"
@@ -1164,25 +1309,25 @@ void CCGWorkView::OnFileLoad() {
 
 	if (dlg.DoModal() == IDOK) { // Show the file load dialog
 		m_strItdFileName = dlg.GetPathName(); // Full path and filename
-			scene.clear(); // Clear the existing scene data
+		scene.clear(); // Clear the existing scene data
 
-			// Load and process the IRIT file with the selected tessellation level
-			CGSkelProcessIritDataFiles(m_strItdFileName, 1);
+		// Load and process the IRIT file with the selected tessellation level
+		CGSkelProcessIritDataFiles(m_strItdFileName, 1);
 
-			// Calculate bounding box and determine initial transformation
-			Matrix4 t = getMatrixToCenterObject();
-			scene.calculateVertexNormals();
-			scene.applyTransform(t);
-			double scene_min_z = scene.minz;
-			Matrix4 zBack = Matrix4::translate(0, 0, -scene.minz);
-			scene.applyTransform(zBack);
-			scene.calculateVertexNormals();
+		// Calculate bounding box and determine initial transformation
+		Matrix4 t = getMatrixToCenterObject();
+		scene.calculateVertexNormals();
+		scene.applyTransform(t);
+		double scene_min_z = scene.minz;
+		Matrix4 zBack = Matrix4::translate(0, 0, -scene.minz);
+		scene.applyTransform(zBack);
+		scene.calculateVertexNormals();
 
-			scene.updateIsFirstDraw(false);
+		scene.updateIsFirstDraw(false);
 
-			Invalidate(); // Trigger WM_PAINT for redraw
+		Invalidate(); // Trigger WM_PAINT for redraw
 	}
-	
+
 }
 
 
@@ -1211,6 +1356,7 @@ void CCGWorkView::OnViewPerspective()
 {
 	m_nView = ID_VIEW_PERSPECTIVE;
 	m_bIsPerspective = true;
+	//PerspectiveTransformPoly();
 	Invalidate();
 }
 
@@ -1331,6 +1477,17 @@ void CCGWorkView::OnUpdateLightShadingGouraud(CCmdUI* pCmdUI)
 	pCmdUI->SetCheck(m_nLightShading == ID_LIGHT_SHADING_GOURAUD);
 }
 
+
+void CCGWorkView::OnLightShadingPhong()
+{
+	m_nLightShading = ID_SHADING_PHONG;
+}
+
+void CCGWorkView::OnUpdateLightShadingPhong(CCmdUI* pCmdUI)
+{
+	pCmdUI->SetCheck(m_nLightShading == ID_SHADING_PHONG);
+}
+
 // LIGHT SETUP HANDLER ///////////////////////////////////////////
 
 void lightsDlgThread()
@@ -1420,7 +1577,7 @@ void MouseDlgThread() {
 void CCGWorkView::OnOptionsMousesensitivity()
 {
 	std::thread dialogThread(MouseDlgThread);
-	dialogThread.detach(); 
+	dialogThread.detach();
 
 
 }
@@ -1648,7 +1805,7 @@ void CCGWorkView::ApplyXRotation(int d) {
 	Matrix4 r = Matrix4::rotateX(d);
 
 	if (m_is_object_space_transform) {
-		 r = CreateCenteredRotationMatrix(r);
+		r = CreateCenteredRotationMatrix(r);
 	}
 	// Create the centered rotation matrix
 
@@ -2147,4 +2304,236 @@ void CCGWorkView::On3dVolumetricMarle() {
 void CCGWorkView::OnUpdate3dVolumetricMarble(CCmdUI* pCmdUI) {
 	pCmdUI->SetCheck(m_3DVOLUMETRICTEXTURE_MARBLE == true);
 
+}
+
+Vector4 CalculatePolygonCenter(const Poly* p) {
+	Vector4 center(0.0f, 0.0f, 0.0f, 1.0f);
+	std::vector<Vertex>  vertices = p->getVertices();
+
+	int vertexCount = vertices.size();
+
+	// Sum up all vertex coordinates
+	for (const auto& vertex : vertices) {
+		center.x += vertex.x;
+		center.y += vertex.y;
+		center.z += vertex.z;
+	}
+
+	// Divide by the number of vertices to get the average
+	if (vertexCount > 0) {
+		center.x /= vertexCount;
+		center.y /= vertexCount;
+		center.z /= vertexCount;
+	}
+
+	return center;
+}
+
+// Function to convert degrees to radians
+constexpr float DegreesToRadians(float degrees) {
+	return degrees * (static_cast<float>(M_PI) / 180.0f);
+}
+
+// Function to scale a COLORREF by an intensity factor
+COLORREF ScaleColor(COLORREF color, float factor) {
+	// Extract the red, green, and blue components
+	int red = GetRValue(color);
+	int green = GetGValue(color);
+	int blue = GetBValue(color);
+
+	// Scale each component and clamp to 0-255
+	red = static_cast<int>(red * factor);
+	green = static_cast<int>(green * factor);
+	blue = static_cast<int>(blue * factor);
+
+	red = std::min(max(red, 0), 255);   // Clamp red to [0, 255]
+	green = std::min(max(green, 0), 255); // Clamp green to [0, 255]
+	blue = std::min(max(blue, 0), 255);  // Clamp blue to [0, 255]
+
+	// Return the scaled color
+	return RGB(red, green, blue);
+}
+/*
+COLORREF ApplySpotlight(const Poly* p) {
+
+	CCGWorkApp* cApp = (CCGWorkApp*)AfxGetApp();  // Access the application instance
+	//COLORREF   outColor = RGB(0, 0, 0);
+	COLORREF outColor = p->getColor();
+	Vector4 polygonCenter = CalculatePolygonCenter(p);
+	Vector4 spotlightPosition(cApp->m_lights->posX, cApp->m_lights->posY, cApp->m_lights->posZ, 1.0f);
+	Vector4  lightToSurface = (polygonCenter - spotlightPosition).normalize();
+	Vector4  lightToSurfaceNeg(-lightToSurface.x, -lightToSurface.y, -lightToSurface.z, 1.0f);
+	Vector4 spotlightDirection(cApp->m_lights->dirX, cApp->m_lights->dirY, cApp->m_lights->dirZ, 1.0f);
+	float cosTheta = (spotlightDirection.normalize()).dot((lightToSurfaceNeg.normalize()));
+	if (cosTheta < cos(DegreesToRadians(cApp->m_lights->spotlightCone))) {
+		// Outside the spotlight cone
+		return outColor;
+
+	}
+	// Spotlight attenuation factor
+	float spotlightFactor = pow(cosTheta, cApp->m_lights->spotlightFactor);
+
+	// Calculate diffuse lighting
+	Normal n = p->getNormal();
+	Vector4 polyNormal = n.getVector();
+	float diffuseIntensity = max(0.0f, polyNormal.dot(lightToSurfaceNeg)) * spotlightFactor;
+
+	// Combine ambient and diffuse components
+	COLORREF lightColor = RGB(cApp->m_lights->colorR, cApp->m_lights->colorG, cApp->m_lights->colorB);
+	COLORREF diffuseColor = ScaleColor(lightColor, diffuseIntensity);
+	outColor = diffuseColor;
+	outColor += diffuseColor;
+	return outColor;
+}
+*/
+
+COLORREF BlendColors(COLORREF baseColor, COLORREF blendColor) {
+	int baseR = GetRValue(baseColor);
+	int baseG = GetGValue(baseColor);
+	int baseB = GetBValue(baseColor);
+
+	int blendR = GetRValue(blendColor);
+	int blendG = GetGValue(blendColor);
+	int blendB = GetBValue(blendColor);
+
+	// Sum colors and clamp to 255
+	int finalR = std::min(baseR + blendR, 255);
+	int finalG = std::min(baseG + blendG, 255);
+	int finalB = std::min(baseB + blendB, 255);
+
+	return RGB(finalR, finalG, finalB);
+}
+
+COLORREF ApplySpotlight(const Poly* p) {
+	CCGWorkApp* cApp = (CCGWorkApp*)AfxGetApp();
+
+	COLORREF outColor = p->getColor();
+	Vector4 polygonCenter = CalculatePolygonCenter(p);
+	Vector4 spotlightPosition(cApp->m_lights->posX, cApp->m_lights->posY, cApp->m_lights->posZ, 1.0f);
+
+	// Light direction to polygon
+	Vector4 lightToSurface = (polygonCenter - spotlightPosition).normalize();
+	Vector4 lightToSurfaceNeg(-lightToSurface.x, -lightToSurface.y, -lightToSurface.z, 1.0f);
+
+	// Spotlight direction (ensure it's normalized)
+	Vector4 spotlightDirection(cApp->m_lights->dirX, cApp->m_lights->dirY, cApp->m_lights->dirZ, 1.0f);
+	spotlightDirection = spotlightDirection.normalize();
+
+	float cosTheta = spotlightDirection.dot(lightToSurfaceNeg);
+
+	// Spotlight cone cutoff
+	float spotlightConeRad = DegreesToRadians(cApp->m_lights->spotlightCone);
+	if (cosTheta < cos(spotlightConeRad)) {
+		return outColor; // Outside spotlight cone
+	}
+
+	// Spotlight attenuation
+	float spotlightFactor = pow(max(cosTheta, 0.0f), cApp->m_lights->spotlightFactor);
+
+	// Diffuse Lighting Calculation
+	Normal n = p->getNormal();
+	Vector4 polyNormal = n.getVector().normalize(); // Ensure normal is normalized
+	float diffuseIntensity = max(0.0f, polyNormal.dot(lightToSurfaceNeg)) * spotlightFactor;
+
+	// Compute final color
+	COLORREF lightColor = RGB(cApp->m_lights->colorR, cApp->m_lights->colorG, cApp->m_lights->colorB);
+	COLORREF diffuseColor = ScaleColor(lightColor, diffuseIntensity);
+
+	// Combine colors properly (clamp to avoid overflow)
+	outColor = BlendColors(outColor, diffuseColor);
+
+	return outColor;
+}
+
+void CCGWorkView::PerspectiveTransformPoly()
+{
+	CCGWorkApp* cApp = (CCGWorkApp*)AfxGetApp();
+	Matrix4 Perspective_mat = Matrix4::PerspectiveMatrix(cApp->fovy, cApp->aspectRatio, cApp->nearPlane, cApp->farPlane, cApp->d);
+
+	for (Poly* poly : *scene.getPolygons()) {
+		std::vector<Vertex>& vertices = poly->getVertices();
+
+		for (Vertex& v : vertices)
+		{
+			Vector4 point(v.x, v.y, v.z, v.w);
+			Vector4 transformed = Perspective_mat.MultiplyMatrixVector(point);
+			// Perform perspective divide
+			if (transformed.w != 0.0f) {
+				transformed.x /= transformed.w;
+				transformed.y /= transformed.w;
+				transformed.z /= transformed.w;
+			}
+			v.x = transformed.x;
+			v.y = transformed.y;
+			v.z = transformed.z;
+			v.w = transformed.w;
+
+		}
+
+	}
+
+}
+
+
+
+void CCGWorkView::PerspectiveView(Point* polygonsBuffer, int width, int height)
+{
+	CCGWorkApp* cApp = (CCGWorkApp*)AfxGetApp();
+	Matrix4 Perspective_mat = Matrix4::PerspectiveMatrix(cApp->fovy, cApp->aspectRatio, cApp->nearPlane, cApp->farPlane, cApp->d);
+	CString str;
+	str.Format(_T("mat: %.3f %.3f %.3f %.3f , %.3f %.3f %.3f %.3f , %.3f %.3f %.3f %.3f , %.3f %.3f %.3f %.3f"), Perspective_mat.m[0][0], Perspective_mat.m[0][1], Perspective_mat.m[0][2], Perspective_mat.m[0][3], Perspective_mat.m[1][0], Perspective_mat.m[1][1], Perspective_mat.m[1][2], Perspective_mat.m[1][3], Perspective_mat.m[2][0], Perspective_mat.m[2][1], Perspective_mat.m[2][2], Perspective_mat.m[2][3], Perspective_mat.m[3][0], Perspective_mat.m[3][1], Perspective_mat.m[3][2], Perspective_mat.m[3][3]);
+	STATUS_BAR_TEXT(str);
+
+	for (int y = 0; y < height; ++y) {
+		for (int x = 0; x < width; ++x) {
+			size_t index = y * width + x;
+			if (polygonsBuffer[index].getPolygon() == NULL) continue;
+			Vector4 point(polygonsBuffer[index].x, polygonsBuffer[index].y, polygonsBuffer[index].z);
+			Vector4 transformed = Perspective_mat.MultiplyMatrixVector(point);
+			// Perform perspective divide
+			if (transformed.w != 0.0f) {
+				transformed.x /= transformed.w;
+				transformed.y /= transformed.w;
+				transformed.z /= transformed.w;
+			}
+
+
+			float screenX = (transformed.x + 1) * (width / 2.0f);
+			float screenY = (1 - transformed.y) * (height / 2.0f);
+
+			// Update the buffer
+			polygonsBuffer[index].x = screenX;
+			polygonsBuffer[index].y = screenY;
+			polygonsBuffer[index].z = transformed.z;
+			polygonsBuffer[index].w = transformed.w;
+
+
+
+		}
+	}
+
+
+
+
+	/* old code
+	double alpha = (cApp->nearPlane + cApp->farPlane) / (cApp->farPlane - cApp->nearPlane);
+	double beta = (2 * cApp->nearPlane * cApp->farPlane) / (cApp->nearPlane - cApp->farPlane);
+
+
+
+
+	for (int y = 0; y < height; ++y) {
+		for (int x = 0; x < width; ++x) {
+			size_t index = y * width + x;
+			polygonsBuffer[index].x = polygonsBuffer[index].x / polygonsBuffer[index].z;
+			polygonsBuffer[index].y = polygonsBuffer[index].y / polygonsBuffer[index].z;
+			polygonsBuffer[index].z = -(alpha + beta / polygonsBuffer[index].z);
+
+
+
+		}
+
+	}
+
+	*/
 }

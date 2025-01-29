@@ -150,6 +150,8 @@ Matrix4 Matrix4::orthographic(float left, float right, float bottom, float top, 
     return mat;
 }
 
+
+
 Matrix4 Matrix4::withoutTranslation() const {
     Matrix4 result = *this; // Start with a copy of the current matrix
 
@@ -162,15 +164,18 @@ Matrix4 Matrix4::withoutTranslation() const {
 }
 
 // Perspective projection matrix
-Matrix4 PerspectiveMatrix(double fovy, double aspectRatio, double nearPlane, double farPlane) {
-    double f = 1.0 / tan(fovy / 2.0);
+Matrix4 Matrix4::PerspectiveMatrix(double fovy, double aspectRatio, double nearPlane, double farPlane,double d) {
+    Matrix4 tmp;
+    double fovy_rad = tmp.DegsToRad(fovy);
+    double half_fovy = tan(fovy_rad / 2.0);
+    double f = 1.0 / tan(fovy_rad / 2.0);
     Matrix4 matrix;
-    matrix.m[0][0] = f / aspectRatio;
+    matrix.m[0][0] = 1.0f / (aspectRatio * half_fovy);
     matrix.m[1][1] = f;
     matrix.m[2][2] = (farPlane + nearPlane) / (nearPlane - farPlane);
     matrix.m[2][3] = (2.0 * farPlane * nearPlane) / (nearPlane - farPlane);
     matrix.m[3][2] = -1.0;
-    matrix.m[3][3] = 0.0;
+    matrix.m[3][3] = d;
     return matrix;
 }
 
@@ -232,4 +237,14 @@ Matrix4 Matrix4::inverse() const {
 double Matrix4::DegsToRad(double angle)
 {
     return angle * (PI / 180);
+}
+
+Vector4 Matrix4::MultiplyMatrixVector(const Vector4& vec)
+{
+    Vector4 result;
+    result.x = m[0][0] * vec.x + m[1][0] * vec.y + m[2][0] * vec.z + m[3][0] * vec.w;
+    result.y = m[0][1] * vec.x + m[1][1] * vec.y + m[2][1] * vec.z + m[3][1] * vec.w;
+    result.z = m[0][2] * vec.x + m[1][2] * vec.y + m[2][2] * vec.z + m[3][2] * vec.w;
+    result.w = m[0][3] * vec.x + m[1][3] * vec.y + m[2][3] * vec.z + m[3][3] * vec.w;
+    return result;
 }

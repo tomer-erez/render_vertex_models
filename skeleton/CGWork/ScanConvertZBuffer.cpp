@@ -233,6 +233,7 @@ void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& poly
                 }
    
                 // Z-buffer test with atomic operation if possible
+              
                 if (z < zBuffer[index].z) {
                     zBuffer[index] = Point(static_cast<float>(x), static_cast<float>(y),
                         z, 1.0f, color, &polygon);

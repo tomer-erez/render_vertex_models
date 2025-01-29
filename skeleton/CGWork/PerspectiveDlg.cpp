@@ -31,9 +31,9 @@ void PerspectiveDlg::DoDataExchange(CDataExchange* pDX)
 	CDialog::DoDataExchange(pDX);
 	DDX_Text(pDX, IDC_EDIT1, d);
 	DDX_Text(pDX, IDC_EDIT2, fovy);
-	DDX_Text(pDX, IDC_EDIT3, nearPlane);
-	DDX_Text(pDX, IDC_EDIT4, farPlane);
-	DDX_Text(pDX, IDC_EDIT5, aspectRatio);
+	DDX_Text(pDX, IDC_EDIT4, nearPlane);
+	DDX_Text(pDX, IDC_EDIT5, farPlane);
+	DDX_Text(pDX, IDC_EDIT3, aspectRatio);
 
 }
 

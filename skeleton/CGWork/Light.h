@@ -18,7 +18,8 @@ typedef  enum
 {
     LIGHT_TYPE_DIRECTIONAL,
     LIGHT_TYPE_POINT,
-    LIGHT_TYPE_SPOT
+    LIGHT_TYPE_SPOT,
+    LIGHT_TYPE_SPOTLIGHT
 } LightType;
 
 typedef  enum 
@@ -53,11 +54,14 @@ public:
     double dirX;
     double dirY;
     double dirZ;
+
+    double spotlightCone;
+    double spotlightFactor;
     
-    LightParams():
-	enabled(false),type(LIGHT_TYPE_DIRECTIONAL),space(LIGHT_SPACE_VIEW),
-	colorR(110),colorG(110),colorB(110),posX(500),posY(1000),posZ(0),
-	dirX(0),dirY(0),dirZ(-1)
+    LightParams() :
+        enabled(false), type(LIGHT_TYPE_DIRECTIONAL), space(LIGHT_SPACE_VIEW),
+        colorR(110), colorG(110), colorB(110), posX(500), posY(1000), posZ(0),
+        dirX(0), dirY(0), dirZ(-1), spotlightCone(60),spotlightFactor(1)
     {}
 
     

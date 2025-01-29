@@ -50,6 +50,8 @@
 #define IDC_EDIT6                       1047
 #define IDC_BUTTON1                     1047
 #define IDC_TESSELATION_EDIT            1048
+#define IDC_CONE                        1050
+#define IDC_SPOTLIGHT_FACTOR            1051
 #define IDC_EDIT3                       2042
 #define IDC_EDIT4                       3042
 #define IDC_EDIT5                       4042
@@ -119,14 +121,15 @@
 #define ID_3DVOLUMETRICTEXTURE_NONE     32846
 #define ID_3DVOLUMETRICTEXTURE_WOOD     32847
 #define ID_3DVOLUMETRICTEXTURE_MARBLE   32848
+#define ID_SHADING_PHONG                32849
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        151
-#define _APS_NEXT_COMMAND_VALUE         32849
-#define _APS_NEXT_CONTROL_VALUE         1049
+#define _APS_NEXT_RESOURCE_VALUE        153
+#define _APS_NEXT_COMMAND_VALUE         32850
+#define _APS_NEXT_CONTROL_VALUE         1052
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
