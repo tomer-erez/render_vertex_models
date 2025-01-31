@@ -80,6 +80,7 @@ public:
 	bool m_3DVOLUMETRICTEXTURE_MARBLE;
 	bool m_3DVOLUMETRICTEXTURE_WOOD;
 	bool m_3DVOLUMETRICTEXTURE_NONE;
+	bool m_3DVOLUMETRICTEXTURE_WATER;
 
 
 	// Overrides
@@ -296,6 +297,8 @@ protected:
 	// 3d volumetric marble
 	afx_msg void On3dVolumetricMarle();
 	afx_msg void OnUpdate3dVolumetricMarble(CCmdUI* pCmdUI);
+	afx_msg void On3dVolumetricWater();
+	afx_msg void OnUpdate3dVolumetricWater(CCmdUI* pCmdUI);
 
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()

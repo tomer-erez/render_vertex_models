@@ -165,6 +165,7 @@ BEGIN
         MENUITEM "None",                        ID_3DVOLUMETRICTEXTURE_NONE
         MENUITEM "wood",                        ID_3DVOLUMETRICTEXTURE_WOOD
         MENUITEM "marble",                      ID_3DVOLUMETRICTEXTURE_MARBLE
+        MENUITEM "water",                       ID_3DVOLUMETRICTEXTURE_WATER
     END
 END
 

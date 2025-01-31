@@ -182,7 +182,8 @@ ON_COMMAND(ID_3DVOLUMETRICTEXTURE_WOOD, &CCGWorkView::On3dVolumetricWood)
 ON_UPDATE_COMMAND_UI(ID_3DVOLUMETRICTEXTURE_WOOD, &CCGWorkView::OnUpdate3dVolumetricWood)
 ON_COMMAND(ID_3DVOLUMETRICTEXTURE_MARBLE, &CCGWorkView::On3dVolumetricMarle)
 ON_UPDATE_COMMAND_UI(ID_3DVOLUMETRICTEXTURE_MARBLE, &CCGWorkView::OnUpdate3dVolumetricMarble)
-
+ON_COMMAND(ID_3DVOLUMETRICTEXTURE_WATER, &CCGWorkView::On3dVolumetricWater)
+ON_UPDATE_COMMAND_UI(ID_3DVOLUMETRICTEXTURE_WATER, &CCGWorkView::OnUpdate3dVolumetricWater)
 
 
 
@@ -256,6 +257,7 @@ CCGWorkView::CCGWorkView()
 	m_3DVOLUMETRICTEXTURE_MARBLE = false;
 	m_3DVOLUMETRICTEXTURE_WOOD = false;
 	m_3DVOLUMETRICTEXTURE_NONE = true;
+	m_3DVOLUMETRICTEXTURE_WATER = false;
 
 
 	/*
@@ -954,6 +956,8 @@ void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer,
 	memDC.DeleteDC();
 }
 
+float t = 0.0f; // Initialize globally in the render loop
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1033,11 +1037,15 @@ void CCGWorkView::OnDraw(CDC* pDC) {
 	}
 
 	
+	t += 0.55f;  // Increment time
+	t = fmod(t, 10000.0f);  // Keep t within the range [0.0, 100.0]
+
 
 	// Process polygons
 	for (Poly* poly : *scene.getPolygons()) {
 		if (m_solid_rendering && polygonsBuffer) {
-			renderPolygon(polygonsBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling, m_3DVOLUMETRICTEXTURE_MARBLE, m_3DVOLUMETRICTEXTURE_WOOD);
+			renderPolygon(polygonsBuffer, width, height, *poly, cameraPosition, m_do_back_face_culling,
+				m_3DVOLUMETRICTEXTURE_MARBLE, m_3DVOLUMETRICTEXTURE_WOOD, m_3DVOLUMETRICTEXTURE_WATER,t);
 		}
 		if (edgesBuffer) {
 			DrawPolygonEdgesAndVertexNormals(edgesBuffer, width, height, poly, cameraPosition, white, pApp->vertex_normals_color);
@@ -2262,6 +2270,8 @@ void CCGWorkView::On3dVolumetricNone() {
 	m_3DVOLUMETRICTEXTURE_MARBLE = false;
 	m_3DVOLUMETRICTEXTURE_WOOD = false;
 	m_3DVOLUMETRICTEXTURE_NONE = true;
+	m_3DVOLUMETRICTEXTURE_WATER = false;
+	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_WATER, false);
 	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_MARBLE, false);
 	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_WOOD, false);
 	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_NONE, true);
@@ -2277,6 +2287,8 @@ void CCGWorkView::On3dVolumetricWood() {
 	m_3DVOLUMETRICTEXTURE_MARBLE = false;
 	m_3DVOLUMETRICTEXTURE_WOOD = true;
 	m_3DVOLUMETRICTEXTURE_NONE = false;
+	m_3DVOLUMETRICTEXTURE_WATER = false;
+	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_WATER, false);
 	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_MARBLE, false);
 	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_WOOD, true);
 	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_NONE, false);
@@ -2290,12 +2302,30 @@ void CCGWorkView::On3dVolumetricMarle() {
 	m_3DVOLUMETRICTEXTURE_MARBLE = true;
 	m_3DVOLUMETRICTEXTURE_WOOD = false;
 	m_3DVOLUMETRICTEXTURE_NONE = false;
+	m_3DVOLUMETRICTEXTURE_WATER = false;
+	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_WATER, false);
 	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_MARBLE, true);
 	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_WOOD, false);
 	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_NONE, false);
 }
 void CCGWorkView::OnUpdate3dVolumetricMarble(CCmdUI* pCmdUI) {
 	pCmdUI->SetCheck(m_3DVOLUMETRICTEXTURE_MARBLE == true);
+
+}
+
+
+void CCGWorkView::On3dVolumetricWater() {
+	m_3DVOLUMETRICTEXTURE_MARBLE = false;
+	m_3DVOLUMETRICTEXTURE_WOOD = false;
+	m_3DVOLUMETRICTEXTURE_NONE = false;
+	m_3DVOLUMETRICTEXTURE_WATER = true;
+	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_WATER, true);
+	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_MARBLE, false);
+	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_WOOD, false);
+	CheckMenuItem(ID_3DVOLUMETRICTEXTURE_NONE, false);
+}
+void CCGWorkView::OnUpdate3dVolumetricWater(CCmdUI* pCmdUI) {
+	pCmdUI->SetCheck(m_3DVOLUMETRICTEXTURE_WATER == true);
 
 }
 
