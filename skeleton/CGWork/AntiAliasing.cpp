@@ -12,7 +12,7 @@
 #include <cstdlib>    // For malloc and free
 #include <windows.h>  // For GetRValue, GetGValue, GetBValue
 enum ColorChannel { RED, GREEN, BLUE };
-
+float M_PI = 3.14159;
 // Clamp function
 template <typename T>
 inline T clamp(T val, T minVal, T maxVal) {
@@ -69,6 +69,22 @@ std::vector<float> precomputeWeights(int ssaaFactor, const std::string& filterNa
                 float weight = max(0.0f, 1.0f - (dx + dy));
                 weights[sy * ssaaFactor + sx] = weight;
                 weightSum += weight;
+            }
+        }
+    }
+    else if (filterName == "Sinc") {
+        const float sincScale = 3.0f; // Controls the width of the sinc function
+        for (int sy = 0; sy < ssaaFactor; ++sy) {
+            for (int sx = 0; sx < ssaaFactor; ++sx) {
+                float dx = (sx + 0.5f) * step - 0.5f;
+                float dy = (sy + 0.5f) * step - 0.5f;
+
+                // Compute 2D sinc weight
+                float r = std::sqrt(dx * dx + dy * dy) * sincScale;
+                float sincWeight = (r == 0.0f) ? 1.0f : std::sin(M_PI * r) / (M_PI * r);
+
+                weights[sy * ssaaFactor + sx] = sincWeight;
+                weightSum += sincWeight;
             }
         }
     }

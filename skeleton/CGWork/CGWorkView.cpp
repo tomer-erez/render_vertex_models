@@ -955,13 +955,6 @@ void CCGWorkView::renderToBitmap(Point* bgBuffer, Point* edgesBuffer,
 }
 
 
-void threeDmarble() {
-
-}
-void threeDwood() {
-
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 // CCGWorkView drawing
