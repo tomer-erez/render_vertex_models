@@ -122,13 +122,14 @@
 #define ID_3DVOLUMETRICTEXTURE_WOOD     32847
 #define ID_3DVOLUMETRICTEXTURE_MARBLE   32848
 #define ID_SHADING_PHONG                32849
+#define ID_3DVOLUMETRICTEXTURE_WATER    32858
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        153
-#define _APS_NEXT_COMMAND_VALUE         32850
+#define _APS_NEXT_COMMAND_VALUE         32851
 #define _APS_NEXT_CONTROL_VALUE         1052
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
