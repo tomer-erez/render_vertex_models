@@ -1,6 +1,6 @@
 [OBJECT NONE
     [OBJECT TEAPOT
-        [OBJECT
+        [OBJECT 
             [color 4]
             BODY
             [SURFACE BSPLINE 10 13 4 4 E3
@@ -155,6 +155,8 @@
 
         ]
         [OBJECT
+            [Transp 0.5]
+
             [color 1]
             SPOUT
             [SURFACE BSPLINE 7 7 4 4 E3
@@ -221,6 +223,7 @@
 
         ]
         [OBJECT
+            [Transp 0.3]
             [color 5]
             HANDLE
             [SURFACE BSPLINE 7 7 4 4 E3

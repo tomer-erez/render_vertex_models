@@ -73,7 +73,7 @@ std::vector<float> precomputeWeights(int ssaaFactor, const std::string& filterNa
         }
     }
     else if (filterName == "Sinc") {
-        const float sincScale = 3.0f; // Controls the width of the sinc function
+        const float sincScale = 5.50f; // Controls the width of the sinc function
         for (int sy = 0; sy < ssaaFactor; ++sy) {
             for (int sx = 0; sx < ssaaFactor; ++sx) {
                 float dx = (sx + 0.5f) * step - 0.5f;
