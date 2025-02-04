@@ -90,7 +90,7 @@ BOOL CCGWorkApp::InitInstance()
 
 	Object_color = RGB(211, 133, 28);
 	Background_color = RGB(255, 255, 255);
-	fog_color = RGB(65,65,65);
+	fog_color = RGB(188,188,188);
 
 	poly_normals_color = RGB(255, 0, 255);
 	vertex_normals_color = RGB(0, 255, 255);
