@@ -42,6 +42,9 @@ void CLightDialog::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_LIGHT_DIR_Y, m_lights[m_currentLightIdx].dirY);
 	DDX_Text(pDX, IDC_LIGHT_DIR_Z, m_lights[m_currentLightIdx].dirZ);
 
+	DDX_Text(pDX, IDC_CONE, m_lights[m_currentLightIdx].spotlightCone);
+	DDX_Text(pDX, IDC_SPOTLIGHT_FACTOR, m_lights[m_currentLightIdx].spotlightFactor);
+
 	//NOTE:Add more dialog controls which are associated with the structure below this line		
 	//...
 

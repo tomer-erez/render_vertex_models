@@ -6,7 +6,7 @@
     GUIRIT_SCENE
 
     [OBJECT [HierItemExpanded 1] GEOMETRY
-	[OBJECT [transp 0] [rgb "200,0,0"] 
+	[OBJECT [transp 0.58] [rgb "200,0,0"] 
 	    [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] _000071
 	    [OBJECT [transp 0] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] TEAPOT_000072
 		[OBJECT [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] [transp 0] 
@@ -163,7 +163,7 @@
 			[1.5 0 0]
 		    ]
 		]
-		[OBJECT [transp 0] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] 
+		[OBJECT [transp 0.95] [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] 
 		    [color 1] SPOUT_000074
 		    [SURFACE BSPLINE 7 7 4 4 E3
 			[KV 0 0 0 0 1
@@ -229,7 +229,7 @@
 			[2.8 2.25 0]
 		    ]
 		]
-		[OBJECT [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] [transp 0] 
+		[OBJECT [ObjWrapper _REFPTR_ATTR_NOT_CNVRTED_] [transp 0.05] 
 		    [color 5] HANDLE_000075
 		    [SURFACE BSPLINE 7 7 4 4 E3
 			[KV 0 0 0 0 1

@@ -30,7 +30,7 @@ public:
 
     // Projection matrices
     static Matrix4 orthographic(float left, float right, float bottom, float top, float near, float far);
-    static Matrix4 perspective(float fovy, float aspectRatio, float nearPlane, float farPlane, float d);
+    static Matrix4 PerspectiveMatrix(double fovy, double aspectRatio, double nearPlane, double farPlane, double d = 0.0f);
 
     // Modify perspective parameter 'd'
     void setPerspectiveD(float d);
@@ -43,6 +43,8 @@ public:
     // Print the matrix (for debugging)
     void print() const;
     double DegsToRad(double angle);
+
+    Vector4 MultiplyMatrixVector(const Vector4& vec);
 
 };
 

@@ -127,9 +127,80 @@ COLORREF generateWoodTexture(float x, float y, float z) {
     return RGB(static_cast<int>(r), static_cast<int>(g), static_cast<int>(b));
 }
 
+COLORREF generateMetalTexture(float x, float y, float z) {
+    // Scale coordinates for detailed noise
+    float noise = perlinNoise3D(x * 0.1f, y * 0.1f, z * 0.1f);
+
+    // Add fine scratches using high-frequency noise
+    float scratches = perlinNoise3D(x * 5.0f, y * 0.05f, z * 5.0f);
+    noise += scratches * 0.1f;
+
+    // Clamp and map to grayscale
+    float intensity = clamp(noise, 0.0f, 1.0f);
+    int gray = static_cast<int>(intensity * 255.0f);
+
+    // Add a metallic sheen effect (optional)
+    int red = static_cast<int>(gray * 1.1f);  // Slightly enhance red for warmth
+    red = clamp(red, 0, 255);
+
+    return RGB(gray, red, gray);
+}
+
+COLORREF generateWaterTexture(float x, float y, float z, float time) {
+    // Scale coordinates for finer noise
+    float scale = 0.1f;
+    float flowX = -x * scale + time * 0.2f;  // Add directional movement
+    float flowY = -y * scale + time * 0.3f;
+
+    // Base noise and turbulence
+    float baseNoise = perlinNoise3D(flowX, flowY, z * scale);
+    float turbulence = perlinNoise3D(flowX * 4.0f, flowY * 4.0f, z * scale) * 0.4f;
+    baseNoise += turbulence;
+
+    // Ripples
+    float ripples1 = std::sin(flowX * 10.0f) * 0.5f + 0.5f;
+    float ripples2 = std::sin(flowY * 15.0f + time * 0.5f) * 0.5f + 0.5f;
+
+    // Blend layers for smoother texture
+    float intensity = baseNoise * 0.4f + ripples1 * 0.3f + ripples2 * 0.3f;
+
+    // Smooth the intensity
+    intensity = intensity * intensity * (3 - 2 * intensity);  // Smoothstep
+
+    // Depth effect
+    float depthFactor = 1.0f - clamp(z * 0.01f, 0.0f, 1.0f);
+
+    // Map intensity to blue and white colors
+    int blue = static_cast<int>(intensity * 200.0f + 55.0f) * depthFactor;
+    int green = static_cast<int>(intensity * 0.06005f * depthFactor);  // Minimal green for depth
+    int red = 0;  // No red contribution
+
+    // Add Fresnel reflection and highlights
+    float fresnel = std::pow(1.0f - intensity, 2.0f);
+    blue = static_cast<int>(blue + fresnel * 50.0f);   // Enhance blue
+    green = static_cast<int>(green * 5.15f + fresnel * 4.40f);  // Slight Fresnel boost for green
+
+    // Add white highlights for reflection
+    if (intensity > 0.99f) {
+        blue = static_cast<int>(blue * 1.4f);  // Brighten highlights
+        green = static_cast<int>(1 + green * 150.0f);  // Reduce green in highlights
+        red = static_cast<int>(intensity * 180.0f * 0.2f);  // Add slight white highlights
+    }
+
+    // Clamp values to valid RGB range
+    blue = clamp(blue, 0, 255);
+    green = clamp(green, 0, 255);
+    red = clamp(red, 0, 255);
+
+    return RGB(blue, green, red);
+}
+
+
+
+
 // Render a polygon using scan-line rasterization and Z-buffering
 void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& polygon,
-    const Vector4& cameraPosition, bool doBackFaceCulling, bool applyMarbleTexture, bool applyWoodTexture) {
+    const Vector4& cameraPosition, bool doBackFaceCulling, bool applyMarbleTexture, bool applyWoodTexture, bool applyWaterTexture, float t) {
     const std::vector<Vertex>& vertices = polygon.getVertices();
     if (vertices.size() < 3) {
         return;
@@ -218,7 +289,7 @@ void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& poly
 
                 // Perspective-correct interpolation
                 const float z = 1.0f / (alpha / vertices[0].z + beta / vertices[1].z + gamma / vertices[2].z);
-                if (applyMarbleTexture || applyWoodTexture) {
+                if (applyMarbleTexture || applyWoodTexture || applyWaterTexture) {
                     float worldX = alpha * vertices[0].x + beta * vertices[1].x + gamma * vertices[2].x;
                     float worldY = alpha * vertices[0].y + beta * vertices[1].y + gamma * vertices[2].y;
                     float worldZ = alpha * vertices[0].z + beta * vertices[1].z + gamma * vertices[2].z;
@@ -229,10 +300,14 @@ void renderPolygon(Point* zBuffer, size_t width, size_t height, const Poly& poly
                     else if (applyWoodTexture) {
                         color = generateWoodTexture(worldX, worldY, worldZ);
                     }
+                    else if (applyWaterTexture) {
+                         color = generateWaterTexture(worldX, worldY, worldZ, t);
+                    }
 
                 }
    
                 // Z-buffer test with atomic operation if possible
+              
                 if (z < zBuffer[index].z) {
                     zBuffer[index] = Point(static_cast<float>(x), static_cast<float>(y),
                         z, 1.0f, color, &polygon);

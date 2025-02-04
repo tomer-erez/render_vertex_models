@@ -90,14 +90,14 @@ BOOL CCGWorkApp::InitInstance()
 
 	Object_color = RGB(211, 133, 28);
 	Background_color = RGB(255, 255, 255);
-	fog_color = RGB(65,65,65);
+	fog_color = RGB(188,188,188);
 
 	poly_normals_color = RGB(255, 0, 255);
 	vertex_normals_color = RGB(0, 255, 255);
 
 	d = 15;
 	fovy = 45;
-	aspectRatio=16.0/9.0;
+	aspectRatio=16.0f/9.0f;
 	nearPlane = 0.1;
 	farPlane=1000.0;
 	
