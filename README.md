@@ -1,11 +1,11 @@
 ## 📽️ Demo
 
-![Demo GIF](images/demo.gif)
+
+
+![Demo GIF](205823511_205823511_competition1.gif)
 
 ## 📊 Visualizations
 
-### Input Data
-![Data Visualization](images/data_visualized.png)
+![Data Visualization](205823511_205823511_competition2.png)
 
-### Model Results
-![Model Results](images/resultes.png)
+![Model Results](combined_output.png)
